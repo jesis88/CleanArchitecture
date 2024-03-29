@@ -1,0 +1,7 @@
+E:\CleanArchitecture\API\obj\Debug\net8.0\API.csproj.AssemblyReference.cache
+E:\CleanArchitecture\API\obj\Debug\net8.0\API.GeneratedMSBuildEditorConfig.editorconfig
+E:\CleanArchitecture\API\obj\Debug\net8.0\API.AssemblyInfoInputs.cache
+E:\CleanArchitecture\API\obj\Debug\net8.0\API.AssemblyInfo.cs
+E:\CleanArchitecture\API\obj\Debug\net8.0\API.csproj.CoreCompileInputs.cache
+E:\CleanArchitecture\API\obj\Debug\net8.0\API.MvcApplicationPartsAssemblyInfo.cs
+E:\CleanArchitecture\API\obj\Debug\net8.0\API.MvcApplicationPartsAssemblyInfo.cache
