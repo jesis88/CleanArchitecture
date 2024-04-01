@@ -8,13 +8,10 @@ namespace Domain.Entity
     {
         public int Id { get; set; }
 
-        [StringLength(80, MinimumLength = 4)]
         public string? Name { get; set; }
 
-        [StringLength(80, MinimumLength = 4)]
         public string? Address { get; set; }
 
-        [StringLength(80, MinimumLength = 4)]
         public string? PhoneNumber { get; set; }
 
         public bool Active { get; set; } = true;

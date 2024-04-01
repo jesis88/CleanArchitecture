@@ -1,4 +1,4 @@
-﻿using Domain.Models;
+﻿using Domain.Entity;
 using Infrastructure.Persistence.Repositories;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -18,12 +18,13 @@ namespace Infrastructure.Persistence
         {
             base.OnModelCreating(builder);
             builder.Entity<ApplicationUser>()
-            .Property(e => e.User.Id)
+            .Property(e => e.Id)
             .ValueGeneratedOnAdd();
         }
-        public DbSet<Customer> Customers { get; set; }
 
-        public DbSet<Order> Orders { get; set; }
+        /*public DbSet<Customer> Customers { get; set; }
+
+        public DbSet<Order> Orders { get; set; }*/
 
         public override DbSet<ApplicationUser> Users { get; set; }
     }

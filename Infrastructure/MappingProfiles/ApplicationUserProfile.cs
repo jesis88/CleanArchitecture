@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using Domain.Models;
+using Domain.Entity;
 using Infrastructure.Persistence.Repositories;
 using System;
 using System.Collections.Generic;
@@ -14,11 +14,16 @@ namespace Infrastructure.MappingProfiles
         public ApplicationUserProfile() 
         {
             CreateMap<User, ApplicationUser>()
-            .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
-            .ForMember(dest => dest.User, opt => opt.MapFrom(src => src));
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.UserName))
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
+                .ForMember(dest => dest, opt => opt.MapFrom(src => src.RecentLogin));
 
             CreateMap<ApplicationUser, User>()
-                .ConvertUsing(src => src.User);
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.UserName))
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
+                .ForMember(dest => dest.RecentLogin, opt => opt.MapFrom(src => src.RecentLogin));
         }
     }
 }

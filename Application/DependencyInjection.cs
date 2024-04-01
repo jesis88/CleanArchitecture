@@ -12,7 +12,6 @@ namespace Application
             services.AddMediatR(configuration => configuration.RegisterServicesFromAssembly(assembly));
             services.AddValidatorsFromAssembly(assembly);
 
-            services.AddAutoMapper(typeof());
             return services;
         }
     }

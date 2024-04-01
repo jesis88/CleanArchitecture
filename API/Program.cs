@@ -1,5 +1,8 @@
 using Application;
 using Infrastructure;
+using Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Serilog;
 
 
@@ -17,7 +20,6 @@ builder.Services
     .AddInfrastructure(builder.Configuration);
 
 builder.Host.UseSerilog((context, configuration) => configuration.ReadFrom.Configuration(context.Configuration));
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

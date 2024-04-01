@@ -1,4 +1,6 @@
-﻿using Domain.Models;
+﻿using Application.Interfaces;
+using CQRSApplication.RoleManagerWrappers;
+using CQRSApplication.UserManagerWrappers;
 using Infrastructure.MappingProfiles;
 using Infrastructure.Persistence;
 using Infrastructure.Persistence.Repositories;
@@ -13,12 +15,11 @@ namespace Infrastructure
     {
         public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
         {
-            var assembly = typeof(DependencyInjection).Assembly;
             services.AddDbContext<CQRSDbContext>(options =>
-            {
-                options.UseNpgsql(configuration.GetConnectionString("CleanArchitecture"));
-                options.EnableSensitiveDataLogging();
-            });
+             {
+                 options.UseNpgsql(configuration.GetConnectionString("CleanArchitecture"), b => b.MigrationsAssembly("Infrastructure"));
+                 options.EnableSensitiveDataLogging();
+             });
 
             services.AddIdentity<ApplicationUser, IdentityRole<string>>()
                 .AddRoles<IdentityRole<string>>()
@@ -26,6 +27,9 @@ namespace Infrastructure
                 .AddDefaultTokenProviders();
 
             services.AddAutoMapper(typeof(ApplicationUserProfile).Assembly);
+
+            services.AddScoped<IUserManagerWrapper, UserManagerWrapper>();
+            services.AddScoped<IRoleManagerWrapper, RoleManagerWrapper>();
             return services;
         }
     }
