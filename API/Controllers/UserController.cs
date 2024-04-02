@@ -32,7 +32,7 @@ namespace API.Controllers
             }
         }
 
-        /*[AllowAnonymous]
+        [AllowAnonymous]
         [HttpGet("Login")]
         public async Task<IActionResult> GetUserLoginDetailsAsync([FromQuery] LoginCommand command, CancellationToken cancellationToken)
         {
@@ -47,7 +47,7 @@ namespace API.Controllers
             }
         }
 
-        [HttpPost("RefreshToken")]
+        /*[HttpPost("RefreshToken")]
         public async Task<IActionResult> RefreshToken([FromQuery] RefreshTokenQuery query, CancellationToken cancellationToken)
         {
             try

@@ -4,7 +4,7 @@ using Domain.Entity;
 using Infrastructure.Persistence.Repositories;
 using Microsoft.AspNetCore.Identity;
 
-namespace CQRSApplication.UserManagerWrappers
+namespace Infrastructure.Wrappers
 {
     public class UserManagerWrapper : IUserManagerWrapper
     {
@@ -17,16 +17,16 @@ namespace CQRSApplication.UserManagerWrappers
             _mapper = mapper;
         }
 
-        public Task<IdentityResult> AddToRolesAsync(User user, IEnumerable<string>role)
+        public async Task<IdentityResult> AddToRolesAsync(User user, IEnumerable<string>role)
         {
-            var applicationUser = _mapper.Map<ApplicationUser>(user);
-            return _userManager.AddToRolesAsync(applicationUser, role);
+            var applicationUser = await _userManager.FindByNameAsync(user.UserName);
+            return await _userManager.AddToRolesAsync(applicationUser, role);
         }
 
-        public Task<IList<string>> GetRolesAsync(User user)
+        public async Task<IList<string>> GetRolesAsync(User user)
         {
-            var applicationUser = _mapper.Map<ApplicationUser>(user);
-            return _userManager.GetRolesAsync(applicationUser);
+            var applicationUser = await _userManager.FindByNameAsync(user.UserName);
+            return await _userManager.GetRolesAsync(applicationUser);
         }
 
         public Task<IdentityResult> CreateAsync(User user, string password)
@@ -47,16 +47,16 @@ namespace CQRSApplication.UserManagerWrappers
             return user;
         }
 
-        public Task<bool> CheckPasswordAsync(User user, string password)
+        public async Task<bool> CheckPasswordAsync(User user, string password)
         {
-            var applicationUser = _mapper.Map<ApplicationUser>(user);
-            return _userManager.CheckPasswordAsync(applicationUser, password);
+            var applicationUser = await _userManager.FindByNameAsync(user.UserName);
+            return await _userManager.CheckPasswordAsync(applicationUser, password);
         }
 
-        public Task<IdentityResult> UpdateAsync(User user)
+        public async Task<IdentityResult> UpdateAsync(User user)
         {
-            var applicationUser = _mapper.Map<ApplicationUser>(user);
-            return _userManager.UpdateAsync(applicationUser);
+            var applicationUser = await _userManager.FindByNameAsync(user.UserName);
+            return await _userManager.UpdateAsync(applicationUser);
         }
     }
 }

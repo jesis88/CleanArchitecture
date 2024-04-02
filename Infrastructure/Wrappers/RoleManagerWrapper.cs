@@ -2,7 +2,7 @@
 using Application.Interfaces;
 using Microsoft.AspNetCore.Identity;
 
-namespace CQRSApplication.RoleManagerWrappers
+namespace Infrastructure.Wrappers
 {
     public class RoleManagerWrapper : IRoleManagerWrapper
     {

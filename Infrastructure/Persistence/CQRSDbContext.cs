@@ -17,9 +17,9 @@ namespace Infrastructure.Persistence
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
-            builder.Entity<ApplicationUser>()
+            /*builder.Entity<ApplicationUser>()
             .Property(e => e.Id)
-            .ValueGeneratedOnAdd();
+            .ValueGeneratedOnAdd();*/
         }
 
         /*public DbSet<Customer> Customers { get; set; }

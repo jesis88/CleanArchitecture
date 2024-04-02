@@ -1,9 +1,12 @@
 ﻿using Application.Interfaces;
-using CQRSApplication.RoleManagerWrappers;
-using CQRSApplication.UserManagerWrappers;
+using AutoMapper;
+using Hangfire;
+using Hangfire.PostgreSql;
 using Infrastructure.MappingProfiles;
 using Infrastructure.Persistence;
 using Infrastructure.Persistence.Repositories;
+using Infrastructure.Services;
+using Infrastructure.Wrappers;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -26,10 +29,24 @@ namespace Infrastructure
                 .AddEntityFrameworkStores<CQRSDbContext>()
                 .AddDefaultTokenProviders();
 
-            services.AddAutoMapper(typeof(ApplicationUserProfile).Assembly);
+            services.AddHangfire(x => x.UsePostgreSqlStorage(options =>
+            {
+                options.UseNpgsqlConnection(configuration.GetConnectionString("CleanArchitecture"));
+            }));
+            services.AddHangfireServer();
 
             services.AddScoped<IUserManagerWrapper, UserManagerWrapper>();
             services.AddScoped<IRoleManagerWrapper, RoleManagerWrapper>();
+            services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+
+            var mappingConfig = new MapperConfiguration(mc =>
+            {
+                mc.AddProfile(new ApplicationUserProfile());
+                // Add other profiles if any
+            });
+
+            IMapper mapper = mappingConfig.CreateMapper();
+            services.AddSingleton(mapper);
             return services;
         }
     }

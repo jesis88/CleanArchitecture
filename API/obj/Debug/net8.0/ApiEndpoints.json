@@ -1,6 +1,27 @@
 [
   {
     "ContainingType": "API.Controllers.UserController",
+    "Method": "GetUserLoginDetailsAsync",
+    "RelativePath": "api/User/Login",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "Username",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "Password",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "API.Controllers.UserController",
     "Method": "GetUserRegistrationDetailsAsync",
     "RelativePath": "api/User/Registration",
     "HttpMethod": "POST",

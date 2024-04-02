@@ -3,6 +3,7 @@ using AutoMapper;
 using Domain.Entity;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
+using System.Globalization;
 
 namespace Application.Commands.CommandHandlers
 {
@@ -10,26 +11,35 @@ namespace Application.Commands.CommandHandlers
     {
         private readonly IUserManagerWrapper _userManager;
         private readonly IRoleManagerWrapper _roleManager;
-        private readonly IMapper _mapper;
 
-        public CreateUserHandler(IUserManagerWrapper userManager, IRoleManagerWrapper roleManager, IMapper mapper)
+        public CreateUserHandler(IUserManagerWrapper userManager, IRoleManagerWrapper roleManager)
         {
             _userManager = userManager;
             _roleManager = roleManager;
-            _mapper = mapper;
         }
 
         public async Task<string> Handle(CreateUserCommand command, CancellationToken cancellationToken)
         {
-            var user = _mapper.Map<User>(command);
+            var user = new User() 
+            { 
+                Id = Guid.NewGuid().ToString(),
+                UserName = command.UserName,
+                Email = command.Email
+            };
 
             var result = await _userManager.CreateAsync(user, command.Password);
             if (result.Succeeded)
             {
-                if(Enum.TryParse<Role>(command.Role.ToString(), out var roleEnum) && await _roleManager.RoleExistsAsync(roleEnum.ToString()))
+                var textInfo = new CultureInfo("en-US", false).TextInfo;
+                var role = textInfo.ToTitleCase(command.Role.ToString().ToLower());
+                if (Enum.TryParse<Role>(role, out var roleEnum) && await _roleManager.RoleExistsAsync(roleEnum.ToString()))
                 {
                     var roles = new List<string> { roleEnum.ToString() };
                     await _userManager.AddToRolesAsync(user, roles);
+                }
+                else
+                {
+                    return $"User with role {roleEnum} does not exist. Please enter any of these roles {string.Join(",", Enum.GetNames<Role>())}";
                 }
             }
             return "User created successfully";
