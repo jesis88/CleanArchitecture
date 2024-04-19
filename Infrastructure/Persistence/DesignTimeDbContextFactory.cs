@@ -8,14 +8,15 @@ using System.Threading.Tasks;
 
 namespace Infrastructure.Persistence
 {
-    public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<CQRSDbContext>
+    public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<CqrsDbContext>
     {
-        public CQRSDbContext CreateDbContext(string[] args)
+        public CqrsDbContext CreateDbContext(string[] args)
         {
-            var optionsBuilder = new DbContextOptionsBuilder<CQRSDbContext>();
-            optionsBuilder.UseNpgsql("Server=localhost;Database=CA;Username=postgres;Password=password");
+            var optionsBuilder = new DbContextOptionsBuilder<CqrsDbContext>();
+            var dbPassword = Environment.GetEnvironmentVariable("PSQL_PASSWORD");
+            optionsBuilder.UseNpgsql($"Server=localhost;Database=CA;Username=postgres;Password={dbPassword}");
 
-            return new CQRSDbContext(optionsBuilder.Options);
+            return new CqrsDbContext(optionsBuilder.Options);
         }
     }
 }

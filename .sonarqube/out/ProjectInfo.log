@@ -1,0 +1,28 @@
+Product projects
+---------------------------------------
+E:\CleanArchitecture\Domain\Domain.csproj
+E:\CleanArchitecture\Application\Application.csproj
+E:\CleanArchitecture\Infrastructure\Infrastructure.csproj
+E:\CleanArchitecture\API\API.csproj
+
+
+Test projects
+---------------------------------------
+E:\CleanArchitecture\xUnitTesting\xUnitTesting.csproj
+
+
+Invalid projects
+---------------------------------------
+{none}
+
+
+Skipped projects
+---------------------------------------
+{none}
+
+
+Excluded projects
+---------------------------------------
+{none}
+
+

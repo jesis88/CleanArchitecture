@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>E:\CleanArchitecture\xUnitTesting\UserManagerWrapperUT.cs</title>
+    <script type="text/javascript" src="../js/dotcover.sourceview.js"></script>
+    <link rel="stylesheet" type="text/css" href="../css/dotcover.report.css" />
+  </head>
+  <body>
+    <pre id="content" class="source-code">
+using Application.EntityUser.Query;
+using Application.Interfaces;
+using AutoMapper;
+using Domain.Entity;
+using Infrastructure.Persistence;
+using Infrastructure.Persistence.Repositories;
+using Infrastructure.Wrappers;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
+using Moq;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace xUnitTesting
+{
+    public class UserManagerWrapperUT
+    {
+        private readonly Mock&lt;IUserStore&lt;ApplicationUser&gt;&gt; _userStoreMock;
+        private readonly Mock&lt;UserManager&lt;ApplicationUser&gt;&gt; _userManagerMock;
+        private readonly Mock&lt;IMapper&gt; _mockMapper;
+        private UserManagerWrapper _userManagerWrapper;
+
+        public UserManagerWrapperUT()
+        {
+            _userStoreMock = new Mock&lt;IUserStore&lt;ApplicationUser&gt;&gt;();
+            _userManagerMock = new Mock&lt;UserManager&lt;ApplicationUser&gt;&gt;(_userStoreMock.Object, null!, null!, null!, null!, null!, null!, null!, null!);
+            _mockMapper = new Mock&lt;IMapper&gt;();
+            _userManagerWrapper = new UserManagerWrapper(_userManagerMock.Object, _mockMapper.Object);
+        }
+
+        [Fact]
+        public async Task AddToRolesAsync_ShouldSucceed_WhenUserExists()
+        {
+            //arrange
+            var user = new User { Id = Guid.NewGuid().ToString(), UserName = &quot;AdminTest123&quot; };
+            var roles = new List&lt;string&gt; { Role.Admin.ToString() };
+
+            _userManagerMock.Setup(x =&gt; x.FindByNameAsync(user.UserName)).ReturnsAsync(new ApplicationUser { Id = user.Id, UserName = user.UserName });
+            _userManagerMock.Setup(x =&gt; x.AddToRolesAsync(It.IsAny&lt;ApplicationUser&gt;(), roles)).ReturnsAsync(IdentityResult.Success);
+
+            //Act
+            var result = await _userManagerWrapper.AddToRolesAsync(user, roles);
+
+            //Assert
+            Assert.NotNull(result);
+            Assert.True(result.Succeeded);
+        }
+
+        [Fact]
+        public async Task AddToRolesAsync_ShouldThrowUserNameIsNull_WhenUserDoesNotExists()
+        {
+            //arrange
+            var user = new User { Id = Guid.NewGuid().ToString() };
+            var roles = new List&lt;string&gt; { Role.Admin.ToString() };
+
+            _userManagerMock.Setup(x =&gt; x.FindByNameAsync(user.UserName!)).ReturnsAsync(new ApplicationUser { Id = user.Id, UserName = user.UserName });
+
+            //Act
+            var error = await Assert.ThrowsAsync&lt;InvalidOperationException&gt;(() =&gt; _userManagerWrapper.AddToRolesAsync(user, roles));
+
+            //Assert
+            Assert.Equal(&quot;Username is null&quot;, error.Message);
+        }
+
+        [Fact]
+        public async Task GetRolesAsync_ShouldReturn_CustomerRole()
+        {
+            //Arrange
+            var user = new User { Id = Guid.NewGuid().ToString(), UserName = &quot;TestUser&quot; };
+            var roles = new List&lt;string&gt; { Role.Customer.ToString() };
+            _userManagerMock.Setup(x =&gt; x.FindByNameAsync(user.UserName)).ReturnsAsync(new ApplicationUser { Id = user.Id, UserName = user.UserName });
+            _userManagerMock.Setup(x =&gt; x.GetRolesAsync(It.IsAny&lt;ApplicationUser&gt;())).ReturnsAsync(roles);
+
+            //Act
+            var result = await _userManagerWrapper.GetRolesAsync(user);
+
+            Assert.NotNull(result);
+            Assert.Equal(roles[0], result[0]);
+        }
+
+        [Fact]
+        public async Task CreateAsync_ShouldSucceed_WhenExistingUserCredentialsSent()
+        {
+            //Arrange
+            var user = new User { Id = Guid.NewGuid().ToString(), UserName = &quot;RegisteredUser123&quot; };
+            var password = &quot;UserRegisteredPassword123#&quot;;
+
+            _mockMapper.Setup(x =&gt; x.Map&lt;ApplicationUser&gt;(user)).Returns(new ApplicationUser { UserName = user.UserName});
+            _userManagerMock.Setup(x =&gt; x.CreateAsync(It.IsAny&lt;ApplicationUser&gt;(), password)).ReturnsAsync(IdentityResult.Success);
+
+            //Act
+            var result = await _userManagerWrapper.CreateAsync(user, password);
+
+
+            //Assert
+            Assert.NotNull(result);
+            Assert.True(result.Succeeded);
+        }
+
+        [Fact]
+        public async Task FindByNameAsync_ShouldReturnUser_WhenUserExistsWithUserName()
+        {
+            //Arrange
+            var userName = &quot;TestUser111&quot;;
+
+            _userManagerMock.Setup(x =&gt; x.FindByNameAsync(userName)).ReturnsAsync(new ApplicationUser { UserName = userName});
+            _mockMapper.Setup(x =&gt; x.Map&lt;User&gt;(It.IsAny&lt;ApplicationUser&gt;())).Returns(new User { Id = Guid.NewGuid().ToString(), UserName = userName});
+
+            //Act
+            var result = await _userManagerWrapper.FindByNameAsync(userName);
+
+            //Assert
+            Assert.NotNull(result);
+            Assert.Equal(userName, result.UserName);
+        }
+
+        [Fact]
+        public async Task FindByNameAsync_ShouldThrowApplicationUserIsNull_WhenNoUserFound()
+        {
+            //Arrange
+            _userManagerMock.Setup(x =&gt; x.FindByNameAsync(It.IsAny&lt;string&gt;())).ReturnsAsync((ApplicationUser)null!);
+
+            //Act
+            var error = await Assert.ThrowsAsync&lt;InvalidOperationException&gt;(() =&gt; _userManagerWrapper.FindByNameAsync(&quot;testuser123&quot;));
+
+            //Assert
+            Assert.NotNull(error);
+            Assert.Equal(&quot;ApplicationUser is null&quot;, error.Message);
+        }
+
+        [Fact]
+        public async Task FindByEmailAsync_ShouldReturnUser_WhenUserExists()
+        {
+            //Arrange
+            var email = &quot;testemail@gmail.com&quot;;
+
+            _mockMapper.Setup(x =&gt; x.Map&lt;User&gt;(It.IsAny&lt;ApplicationUser&gt;())).Returns(new User { Id = Guid.NewGuid().ToString(), Email = email});
+            _userManagerMock.Setup(x =&gt; x.FindByEmailAsync(email)).ReturnsAsync(new ApplicationUser { Email = email});
+
+            //Act
+            var result = await _userManagerWrapper.FindByEmailAsync(email);
+
+            //Assert
+            Assert.NotNull(result);
+            Assert.Equal(email, result.Email);
+        }
+
+        [Fact]
+        public async Task FindByEmailAsync_ShouldThrowApplicationUserIsNull_WhenUserDoesNotExists()
+        {
+            //Arrange
+            _userManagerMock.Setup(x =&gt; x.FindByEmailAsync(It.IsAny&lt;string&gt;())).ReturnsAsync((ApplicationUser)null!);
+
+            //Act
+            var error = await Assert.ThrowsAsync&lt;InvalidOperationException&gt;(() =&gt; _userManagerWrapper.FindByEmailAsync(&quot;testemail@gmail.com&quot;));
+
+            //Assert
+            Assert.NotNull(error);
+            Assert.Equal(&quot;ApplicationUser is null&quot;, error.Message);
+        }
+
+        [Fact]
+        public async Task CheckPasswordAsync_ShouldReturnTrue_WhenCredentialsMatch()
+        {
+            //Arrage
+            var user = new User { Id = Guid.NewGuid().ToString(), UserName = &quot;TestUser111&quot; };
+            var password = &quot;TestUser123&quot;;
+
+            _userManagerMock.Setup(x =&gt; x.FindByNameAsync(user.UserName)).ReturnsAsync(new ApplicationUser { Id = user.Id, UserName = user.UserName});
+            _userManagerMock.Setup(x =&gt; x.CheckPasswordAsync(It.IsAny&lt;ApplicationUser&gt;(), password)).ReturnsAsync(true);
+
+            //Act
+            var result = await _userManagerWrapper.CheckPasswordAsync(user, password);
+
+            //Assert
+            Assert.True(result);
+        }
+
+        [Fact]
+        public async Task UpdateAsync_ShouldSucceed_WhenUserFound()
+        {
+            //Arrange
+            var user = new User { Id = Guid.NewGuid().ToString(), UserName = &quot;testuser111&quot;, RecentLogin = DateTime.UtcNow };
+            _userManagerMock.Setup(x =&gt; x.FindByNameAsync(user.UserName)).ReturnsAsync(new ApplicationUser { UserName = user.UserName, RecentLogin = user.RecentLogin});
+            _userManagerMock.Setup(x =&gt; x.UpdateAsync(It.IsAny&lt;ApplicationUser&gt;())).ReturnsAsync(IdentityResult.Success);
+
+            //Act
+            var result = await _userManagerWrapper.UpdateAsync(user);
+
+            //Assert
+            Assert.NotNull(result);
+            Assert.True(result.Succeeded);
+        }
+
+        [Fact]
+        public async Task ToListAsync_ShouldReturnListOfUser_WhenQueryIsValid()
+        {
+            var options = new DbContextOptionsBuilder&lt;CqrsDbContext&gt;()
+                .UseInMemoryDatabase(databaseName: &quot;testDb_&quot; + Guid.NewGuid().ToString())
+                .Options;
+            var userStore = new UserStore&lt;ApplicationUser&gt;(new CqrsDbContext(options));
+            var userManager = new UserManager&lt;ApplicationUser&gt;(userStore, null!, null!, null!, null!, null!, null!, null!, null!);
+            _userManagerWrapper = new UserManagerWrapper(userManager, _mockMapper.Object);
+
+            var query = new GetUserListQuery() { PageNumber = 2, PageSize = 2 };
+            var applicationUsers = new List&lt;ApplicationUser&gt;
+            {
+                new() {Id = Guid.NewGuid().ToString(),UserName = &quot;testuser1&quot;},
+                new() {Id = Guid.NewGuid().ToString(),UserName = &quot;testuser2&quot;},
+                new() {Id = Guid.NewGuid().ToString(),UserName = &quot;testuser3&quot;},
+                new() {Id = Guid.NewGuid().ToString(), UserName = &quot;testuser4&quot;},
+                new() {Id = Guid.NewGuid().ToString(), UserName = &quot;testuser5&quot;}
+            };
+
+            using (var context = new CqrsDbContext(options))
+            {
+                context.Users.AddRange(applicationUsers);
+                await context.SaveChangesAsync();
+            }
+
+            _mockMapper.Setup(x =&gt; x.Map&lt;List&lt;User&gt;&gt;(It.IsAny&lt;List&lt;ApplicationUser&gt;&gt;())).Returns((List&lt;ApplicationUser&gt; source) =&gt; source.Select(a =&gt; new User { Id = a.Id, UserName = a.UserName }).ToList());
+
+            //Act
+            var result = await _userManagerWrapper.ToListAsync(query, CancellationToken.None);
+
+            //Assert
+            Assert.NotNull(result);
+            Assert.Equal(query.PageSize, result.Count);
+            Assert.Equal(applicationUsers.Skip((query.PageNumber - 1) * query.PageSize).Take(query.PageSize).Select(a =&gt; a.UserName), result.Select(u =&gt; u.UserName));
+        }
+    }
+}
+
+    </pre>
+    <script type="text/javascript">
+      highlightRanges([[27,9,27,38,1],[28,9,28,10,1],[29,13,29,70,1],[30,13,30,150,1],[31,13,31,47,1],[32,13,32,103,1],[33,9,33,10,1],[37,9,37,10,1],[39,13,39,95,1],[40,13,40,68,1],[42,13,42,152,1],[43,13,43,133,1],[46,13,46,81,1],[49,13,49,36,1],[50,13,50,43,1],[51,9,51,10,1],[55,9,55,10,1],[57,13,57,68,1],[58,13,58,68,1],[60,13,60,153,1],[63,13,63,83,1],[63,83,63,131,1],[63,131,63,133,1],[66,13,66,61,1],[67,9,67,10,1],[71,9,71,10,1],[73,13,73,91,1],[74,13,74,71,1],[75,13,75,152,1],[76,13,76,107,1],[79,13,79,72,1],[81,13,81,36,1],[82,13,82,47,1],[83,9,83,10,1],[87,9,87,10,1],[89,13,89,100,1],[90,13,90,57,1],[92,13,92,123,1],[93,13,93,132,1],[96,13,96,80,1],[100,13,100,36,1],[101,13,101,43,1],[102,9,102,10,1],[106,9,106,10,1],[108,13,108,42,1],[110,13,110,127,1],[111,13,111,151,1],[114,13,114,78,1],[117,13,117,36,1],[118,13,118,53,1],[119,9,119,10,1],[123,9,123,10,1],[125,13,125,117,1],[128,13,128,83,1],[128,83,128,133,1],[128,133,128,135,1],[131,13,131,35,1],[132,13,132,68,1],[133,9,133,10,1],[137,9,137,10,1],[139,13,139,47,1],[141,13,141,145,1],[142,13,142,119,1],[145,13,145,76,1],[148,13,148,36,1],[149,13,149,47,1],[150,9,150,10,1],[154,9,154,10,1],[156,13,156,118,1],[159,13,159,83,1],[159,83,159,142,1],[159,142,159,144,1],[162,13,162,35,1],[163,13,163,68,1],[164,9,164,10,1],[168,9,168,10,1],[170,13,170,94,1],[171,13,171,42,1],[173,13,173,151,1],[174,13,174,121,1],[177,13,177,87,1],[180,13,180,33,1],[181,9,181,10,1],[185,9,185,10,1],[187,13,187,125,1],[188,13,188,169,1],[189,13,189,122,1],[192,13,192,70,1],[195,13,195,36,1],[196,13,196,43,1],[197,9,197,10,1],[201,9,201,10,1],[202,13,204,26,1],[205,13,205,88,1],[206,13,206,131,1],[207,13,207,91,1],[209,13,209,81,1],[210,13,217,15,1],[219,20,219,60,1],[220,13,220,14,1],[221,17,221,58,1],[222,17,222,50,1],[223,13,223,14,1],[225,13,225,132,1],[225,132,225,151,1],[225,151,225,196,1],[225,196,225,206,1],[225,206,225,208,1],[228,13,228,95,1],[231,13,231,36,1],[232,13,232,56,1],[233,13,233,122,1],[233,122,233,132,1],[233,132,233,154,1],[233,154,233,164,1],[233,164,233,167,1],[234,9,234,10,1]]);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>E:\CleanArchitecture\Infrastructure\Wrappers\UserManagerWrapper.cs</title>
+    <script type="text/javascript" src="../js/dotcover.sourceview.js"></script>
+    <link rel="stylesheet" type="text/css" href="../css/dotcover.report.css" />
+  </head>
+  <body>
+    <pre id="content" class="source-code">
+using Application.EntityUser.Query;
+using Application.Interfaces;
+using AutoMapper;
+using Domain.Entity;
+using Infrastructure.Persistence.Repositories;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+
+namespace Infrastructure.Wrappers
+{
+    public class UserManagerWrapper(UserManager&lt;ApplicationUser&gt; userManager, IMapper mapper) : IUserManagerWrapper
+    {
+        private readonly UserManager&lt;ApplicationUser&gt; _userManager = userManager;
+        private readonly IMapper _mapper = mapper;
+
+        public async Task&lt;IdentityResult&gt; AddToRolesAsync(User user, IEnumerable&lt;string&gt;role)
+        {
+            ThrowIfNull(user.UserName,&quot;Username is null&quot;);
+            var applicationUser = await _userManager.FindByNameAsync(user.UserName!);
+            ThrowIfNull(applicationUser, &quot;ApplicationUser is null&quot;);
+
+            return await _userManager.AddToRolesAsync(applicationUser!, role);
+        }
+
+        public async Task&lt;IList&lt;string&gt;&gt; GetRolesAsync(User user)
+        {
+            var applicationUser = await _userManager.FindByNameAsync(user.UserName!);
+            return await _userManager.GetRolesAsync(applicationUser!);
+        }
+
+        public Task&lt;IdentityResult&gt; CreateAsync(User user, string password)
+        {
+            var applicationUser = _mapper.Map&lt;ApplicationUser&gt;(user);
+            return _userManager.CreateAsync(applicationUser, password);
+        }
+
+        public async Task&lt;User?&gt; FindByNameAsync(string userName)
+        {
+            var applicationUser = await _userManager.FindByNameAsync(userName);
+            if (applicationUser == null)
+            {
+                return null;
+            }
+
+            var user = _mapper.Map&lt;User&gt;(applicationUser);
+            return user;
+        }
+
+        public async Task&lt;User?&gt; FindByEmailAsync(string email)
+        {
+            var applicationUser = await _userManager.FindByNameAsync(email);
+            if (applicationUser == null)
+            {
+                return null;
+            }
+
+            var user = _mapper.Map&lt;User&gt;(applicationUser);
+            return user;
+        }
+
+        public async Task&lt;bool&gt; CheckPasswordAsync(User user, string password)
+        {
+            var applicationUser = await _userManager.FindByNameAsync(user.UserName!);
+            return await _userManager.CheckPasswordAsync(applicationUser!, password);
+        }
+
+        public async Task&lt;IdentityResult&gt; UpdateAsync(User user)
+        {
+            var applicationUser = await _userManager.FindByNameAsync(user.UserName!);
+            applicationUser!.RecentLogin = user.RecentLogin;
+            return await _userManager.UpdateAsync(applicationUser);
+        }
+
+        public async Task&lt;List&lt;User&gt;&gt; ToListAsync(GetUserListQuery query, CancellationToken cancellationToken)
+        {
+            var applicationUser = await _userManager.Users
+                .Skip((query.PageNumber - 1) * query.PageSize)
+                .Take(query.PageSize)
+                .ToListAsync(cancellationToken);
+            return _mapper.Map&lt;List&lt;User&gt;&gt;(applicationUser);
+        }
+
+        private static void ThrowIfNull(object? value, string errorMessage)
+        {
+            if(value == null)
+            {
+                throw new InvalidOperationException(errorMessage);
+            }
+        }
+    }
+}
+
+    </pre>
+    <script type="text/javascript">
+      highlightRanges([[11,18,11,94,0],[13,9,13,82,0],[14,9,14,51,0],[17,9,17,10,0],[18,13,18,59,0],[19,13,19,86,0],[20,13,20,69,0],[22,13,22,79,0],[23,9,23,10,0],[26,9,26,10,0],[27,13,27,86,0],[28,13,28,71,0],[29,9,29,10,0],[32,9,32,10,0],[33,13,33,70,0],[34,13,34,72,0],[35,9,35,10,0],[38,9,38,10,0],[39,13,39,80,0],[40,13,40,41,0],[41,13,41,14,0],[42,17,42,29,0],[45,13,45,59,0],[46,13,46,25,0],[47,9,47,10,0],[50,9,50,10,0],[51,13,51,77,0],[52,13,52,41,0],[53,13,53,14,0],[54,17,54,29,0],[57,13,57,59,0],[58,13,58,25,0],[59,9,59,10,0],[62,9,62,10,0],[63,13,63,86,0],[64,13,64,86,0],[65,9,65,10,0],[68,9,68,10,0],[69,13,69,86,0],[70,13,70,61,0],[71,13,71,68,0],[72,9,72,10,0],[75,9,75,10,0],[76,13,79,49,0],[80,13,80,61,0],[81,9,81,10,0],[84,9,84,10,0],[85,13,85,30,0],[86,13,86,14,0],[87,17,87,67,0],[89,9,89,10,0]]);
+    </script>
+  </body>
+</html>

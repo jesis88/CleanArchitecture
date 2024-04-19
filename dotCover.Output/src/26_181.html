@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>E:\CleanArchitecture\Infrastructure\Persistence\DesignTimeDbContextFactory.cs</title>
+    <script type="text/javascript" src="../js/dotcover.sourceview.js"></script>
+    <link rel="stylesheet" type="text/css" href="../css/dotcover.report.css" />
+  </head>
+  <body>
+    <pre id="content" class="source-code">
+using Microsoft.EntityFrameworkCore.Design;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Infrastructure.Persistence
+{
+    public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory&lt;CqrsDbContext&gt;
+    {
+        public CqrsDbContext CreateDbContext(string[] args)
+        {
+            var optionsBuilder = new DbContextOptionsBuilder&lt;CqrsDbContext&gt;();
+            var dbPassword = Environment.GetEnvironmentVariable(&quot;PSQL_PASSWORD&quot;);
+            optionsBuilder.UseNpgsql($&quot;Server=localhost;Database=CA;Username=postgres;Password={dbPassword}&quot;);
+
+            return new CqrsDbContext(optionsBuilder.Options);
+        }
+    }
+}
+
+    </pre>
+    <script type="text/javascript">
+      highlightRanges([[14,9,14,10,0],[15,13,15,79,0],[16,13,16,82,0],[17,13,17,111,0],[19,13,19,62,0],[20,9,20,10,0]]);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>E:\CleanArchitecture\Application\EntityUser\Query\QueryHandler\RefreshTokenHandler.cs</title>
+    <script type="text/javascript" src="../js/dotcover.sourceview.js"></script>
+    <link rel="stylesheet" type="text/css" href="../css/dotcover.report.css" />
+  </head>
+  <body>
+    <pre id="content" class="source-code">
+using Application.EntityUser.Commands.CommandHandlers;
+using Application.Interfaces;
+using Domain.Entity;
+using MediatR;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
+
+namespace Application.EntityUser.Query.QueryHandler
+{
+    public class RefreshTokenHandler(IUserManagerWrapper userManager, IConfiguration configuration, IRefreshTokenService refreshTokenService) : IRequestHandler&lt;RefreshTokenQuery, string&gt;
+    {
+        private readonly IUserManagerWrapper _userManager = userManager;
+        private readonly IConfiguration _configuration = configuration;
+        private readonly IRefreshTokenService _refreshTokenService = refreshTokenService;
+
+        public async Task&lt;string&gt; Handle(RefreshTokenQuery request, CancellationToken cancellationToken)
+        {
+            var refreshTokenValue = _refreshTokenService.GetRefreshToken(request.RefreshToken);
+            ThrowIfNull(refreshTokenValue, &quot;Invalid Refresh Token&quot;);
+
+            var (userName, expiryDate) = refreshTokenValue!.Value;
+            if (DateTime.Now &gt; expiryDate)
+                throw new InvalidOperationException(&quot;Refresh Token has expired&quot;);
+
+            var user = await _userManager.FindByNameAsync(userName);
+            ThrowIfNull(user, &quot;Invalid User&quot;);
+
+            return await _refreshTokenService.GetJWTAndRefreshToken(_userManager, _configuration, userName, user!);
+        }
+
+        private static void ThrowIfNull(object? value, string errMessage)
+        {
+            if(value == null)
+            {
+                throw new InvalidOperationException(errMessage);
+            }
+        }
+
+    }
+}
+
+    </pre>
+    <script type="text/javascript">
+      highlightRanges([[16,18,16,142,1],[18,9,18,73,1],[19,9,19,72,1],[20,9,20,90,1],[23,9,23,10,1],[24,13,24,96,1],[25,13,25,69,1],[27,13,27,67,1],[28,13,28,43,1],[29,17,29,82,1],[31,13,31,69,1],[32,13,32,47,1],[34,13,34,116,1],[35,9,35,10,1],[38,9,38,10,1],[39,13,39,30,1],[40,13,40,14,1],[41,17,41,65,1],[43,9,43,10,1]]);
+    </script>
+  </body>
+</html>

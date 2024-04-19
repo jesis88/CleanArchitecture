@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>E:\CleanArchitecture\Infrastructure\Persistence\CqrsDbContext.cs</title>
+    <script type="text/javascript" src="../js/dotcover.sourceview.js"></script>
+    <link rel="stylesheet" type="text/css" href="../css/dotcover.report.css" />
+  </head>
+  <body>
+    <pre id="content" class="source-code">
+using Domain.Entity;
+using Infrastructure.Persistence.Repositories;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
+using System.Diagnostics.CodeAnalysis;
+
+namespace Infrastructure.Persistence
+{
+    [ExcludeFromCodeCoverage]
+    public class CqrsDbContext(DbContextOptions&lt;CqrsDbContext&gt; contextOptions) : IdentityDbContext&lt;ApplicationUser, IdentityRole&lt;string&gt;, string&gt;(contextOptions)
+    {
+        protected override void OnModelCreating(ModelBuilder builder)
+        {
+            base.OnModelCreating(builder);
+
+            builder.Entity&lt;Customer&gt;()
+            .HasOne&lt;ApplicationUser&gt;()
+            .WithMany()
+            .HasForeignKey(c =&gt; c.UserId);
+        }
+
+        public DbSet&lt;Customer&gt; Customers { get; set; }
+
+        public override DbSet&lt;ApplicationUser&gt; Users { get; set; }
+    }
+}
+
+    </pre>
+    <script type="text/javascript">
+      highlightRanges([[11,82,11,162,1],[14,9,14,10,1],[15,13,15,43,1],[17,13,20,43,1],[21,9,21,10,1],[23,44,23,48,0],[23,49,23,53,1],[25,56,25,60,1],[25,61,25,65,1]]);
+    </script>
+  </body>
+</html>

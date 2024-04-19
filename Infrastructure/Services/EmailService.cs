@@ -7,19 +7,27 @@ namespace Infrastructure.Services
     public class EmailService : IEmailService
     {
         private readonly static string personalEmail = "jesismaharjan88@gmail.com";
-        private readonly static string personalPassword = "ytgi tqfs qlen kmdj";
+        private readonly static string personalPassword = Environment.GetEnvironmentVariable("EMAIL_APP_PASSWORD")!;
 
         //for testing mails
-        public async void SendEmailAsync(string receiverEmail, string subject, string message)
+        public async Task SendEmailAsync(string email, string subject, string message)
         {
-            var smtpClient = new SmtpClient("smtp.gmail.com")
+            try
             {
-                Port = 587,
-                Credentials = new NetworkCredential(personalEmail, personalPassword),
-                EnableSsl = true,
-            };
+                var smtpClient = new SmtpClient("smtp.gmail.com")
+                {
+                    Port = 587,
+                    Credentials = new NetworkCredential(personalEmail, personalPassword),
+                    EnableSsl = true,
+                };
 
-            await smtpClient.SendMailAsync(personalEmail, receiverEmail, subject, message);
+                await smtpClient.SendMailAsync(personalEmail, email, subject, message);
+            }
+            catch(Exception ex)
+            {
+                throw new InvalidOperationException($"There was an error: {ex.Message}");
+            }
+            
         }
     }
 }

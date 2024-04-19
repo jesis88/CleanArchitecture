@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>E:\CleanArchitecture\xUnitTesting\LoginUserUT.cs</title>
+    <script type="text/javascript" src="../js/dotcover.sourceview.js"></script>
+    <link rel="stylesheet" type="text/css" href="../css/dotcover.report.css" />
+  </head>
+  <body>
+    <pre id="content" class="source-code">
+using API.Controllers;
+using Application.EntityUser.Commands;
+using Application.EntityUser.Commands.CommandHandlers;
+using Application.Interfaces;
+using Domain.Entity;
+using Hangfire;
+using MediatR;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
+using Moq;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+
+namespace xUnitTesting
+{
+    public class LoginUserUT
+    {
+        private readonly Mock&lt;IUserManagerWrapper&gt; _userManagerMock;
+        private readonly Mock&lt;IConfiguration&gt; _configurationMock;
+        private readonly Mock&lt;IRefreshTokenService&gt; _refreshTokenServiceMock;
+        private readonly Mock&lt;IBackgroundJobClient&gt; _backgroundJobClientMock;
+        private readonly LoginHandler _loginHandler;
+        private readonly Mock&lt;IMediator&gt; _mediatorMock;
+        private readonly UserController _controller;
+
+        public LoginUserUT()
+        {
+            _mediatorMock = new Mock&lt;IMediator&gt;();
+            _userManagerMock = new Mock&lt;IUserManagerWrapper&gt;();
+            _configurationMock = new Mock&lt;IConfiguration&gt;();
+            _refreshTokenServiceMock = new Mock&lt;IRefreshTokenService&gt;();
+            _backgroundJobClientMock = new Mock&lt;IBackgroundJobClient&gt;();
+            _loginHandler = new LoginHandler(_userManagerMock.Object, _configurationMock.Object, _refreshTokenServiceMock.Object, _backgroundJobClientMock.Object);
+            _controller = new UserController(_mediatorMock.Object);
+        }
+
+        [Fact]
+        public async Task Handle_WhenUserDoesNotExist_ThrowsException()
+        {
+            // Arrange
+            var command = new LoginCommand { Username = &quot;test&quot;, Password = &quot;password&quot; };
+            _userManagerMock.Setup(x =&gt; x.FindByNameAsync(It.IsAny&lt;string&gt;())).ReturnsAsync((User)null!);
+
+            // Act &amp; Assert
+            await Assert.ThrowsAsync&lt;InvalidOperationException&gt;(() =&gt; _loginHandler.Handle(command, default));
+        }
+
+        [Fact]
+        public async Task Handle_WhenPasswordIsIncorrect_ThrowsException()
+        {
+            // Arrange
+            var command = new LoginCommand { Username = &quot;test&quot;, Password = &quot;password&quot; };
+            var user = new User
+            {
+                Id = Guid.NewGuid().ToString()
+            };
+            _userManagerMock.Setup(x =&gt; x.FindByNameAsync(It.IsAny&lt;string&gt;())).ReturnsAsync(user);
+            _userManagerMock.Setup(x =&gt; x.CheckPasswordAsync(It.IsAny&lt;User&gt;(), It.IsAny&lt;string&gt;())).ReturnsAsync(false);
+
+            // Act
+            var error = await Assert.ThrowsAsync&lt;InvalidOperationException&gt;(() =&gt; _loginHandler.Handle(command, default));
+
+            //Assert
+            Assert.Equal(&quot;Incorrect details for login&quot;, error.Message);
+        }
+
+        [Fact]
+        public async Task Handle_WhenCredentialsAreValid_ReturnsTokenData()
+        {
+            // Arrange
+            var command = new LoginCommand { Username = &quot;test&quot;, Password = &quot;password&quot; };
+            var user = new User
+            {
+                Id = Guid.NewGuid().ToString()
+            };
+            var roles = new List&lt;string&gt; { &quot;Admin&quot;, &quot;Customer&quot; };
+            _userManagerMock.Setup(x =&gt; x.FindByNameAsync(It.IsAny&lt;string&gt;())).ReturnsAsync(user);
+            _userManagerMock.Setup(x =&gt; x.CheckPasswordAsync(It.IsAny&lt;User&gt;(), It.IsAny&lt;string&gt;())).ReturnsAsync(true);
+            _userManagerMock.Setup(x =&gt; x.GetRolesAsync(It.IsAny&lt;User&gt;())).ReturnsAsync(roles);
+            _configurationMock.Setup(x =&gt; x[&quot;Jwt:Key&quot;]).Returns(&quot;R&lt;7(%~bhFarESf#QmA;P+UM*.B6jpcvV8?3C/Hw$g^5=K&quot;);
+            _configurationMock.Setup(x =&gt; x[&quot;Jwt:Issuer&quot;]).Returns(&quot;https://localhost:7019&quot;);
+            _refreshTokenServiceMock.Setup(x =&gt; x.AddRefreshToken(It.IsAny&lt;string&gt;(), It.IsAny&lt;string&gt;(), It.IsAny&lt;DateTime&gt;()));
+            _refreshTokenServiceMock.Setup(x =&gt; x.GetJWTAndRefreshToken(It.IsAny&lt;IUserManagerWrapper&gt;(), It.IsAny&lt;IConfiguration&gt;(), It.IsAny&lt;string&gt;(), It.IsAny&lt;User&gt;())).ReturnsAsync(JsonConvert.SerializeObject(new { AccessToken = &quot;TestJwtToken&quot;, RefreshToken = &quot;TestRefreshToken&quot; }));
+
+            // Act
+            var result = await _loginHandler.Handle(command, CancellationToken.None);
+
+            // Assert
+            Assert.NotNull(result);
+            var tokenData = JsonConvert.DeserializeObject&lt;dynamic&gt;(result);
+            Assert.NotNull(tokenData!.AccessToken);
+            Assert.NotNull(tokenData.RefreshToken);
+        }
+
+        [Fact]
+        public async Task Handle_ShouldUpdateRecentLogin_WhenLastLoginIsMoreThanOneMinuteAgo()
+        {
+            // Arrange
+            var command = new LoginCommand
+            {
+                Username = &quot;TestUser&quot;,
+                Password = &quot;TestPassword123&quot;
+            };
+
+            var user = new User
+            {
+                Id = Guid.NewGuid().ToString(),
+                UserName = command.Username,
+                RecentLogin = DateTime.UtcNow.AddMinutes(-2) // Set RecentLogin to a time more than a minute ago
+            };
+            var roles = new List&lt;string&gt; { &quot;Admin&quot;, &quot;Customer&quot; };
+            _userManagerMock.Setup(x =&gt; x.GetRolesAsync(It.IsAny&lt;User&gt;())).ReturnsAsync(roles);
+            _configurationMock.Setup(x =&gt; x[&quot;Jwt:Key&quot;]).Returns(&quot;R&lt;7(%~bhFarESf#QmA;P+UM*.B6jpcvV8?3C/Hw$g^5=K&quot;);
+            _configurationMock.Setup(x =&gt; x[&quot;Jwt:Issuer&quot;]).Returns(&quot;https://localhost:7019&quot;);
+            _refreshTokenServiceMock.Setup(x =&gt; x.AddRefreshToken(It.IsAny&lt;string&gt;(), It.IsAny&lt;string&gt;(), It.IsAny&lt;DateTime&gt;()));
+
+            _userManagerMock.Setup(x =&gt; x.FindByNameAsync(command.Username))
+                .ReturnsAsync(user);
+            _userManagerMock.Setup(x =&gt; x.CheckPasswordAsync(user, command.Password))
+                .ReturnsAsync(true);
+            _userManagerMock.Setup(x =&gt; x.UpdateAsync(It.IsAny&lt;User&gt;()))
+                .Callback&lt;User&gt;(u =&gt; Assert.True(u.RecentLogin &gt;= DateTime.UtcNow.AddSeconds(-5))) // Allow for up to 5 seconds of test execution time
+                .ReturnsAsync(IdentityResult.Success);
+
+            // Act
+            await _loginHandler.Handle(command, CancellationToken.None);
+
+            // Assert
+            // Assert that UpdateAsync was called (this will throw if the callback assertion fails)
+            _userManagerMock.Verify(x =&gt; x.UpdateAsync(It.IsAny&lt;User&gt;()), Times.Once);
+        }
+
+        [Fact]
+        public async Task Controller_ShouldReturnOk_WhenCommandIsValid()
+        {
+            // Arrange
+            var command = new LoginCommand
+            {
+                Username = &quot;TestUser&quot;,
+                Password = &quot;TestPassword123&quot;
+            };
+
+            _mediatorMock.Setup(x =&gt; x.Send(command, It.IsAny&lt;CancellationToken&gt;()))
+                .ReturnsAsync(JsonConvert.SerializeObject(new { AccessToken = &quot;testToken&quot;, RefreshToken = &quot;testRefreshToken&quot; }));
+
+            // Act
+            var result = await _controller.GetUserLoginDetailsAsync(command, CancellationToken.None);
+
+            //Assert
+            var okResult = Assert.IsType&lt;OkObjectResult&gt;(result);
+            var tokenData = JsonConvert.DeserializeObject&lt;JObject&gt;(okResult.Value!.ToString()!);
+            Assert.Equal(&quot;testToken&quot;, tokenData![&quot;AccessToken&quot;]!.ToString());
+            Assert.Equal(&quot;testRefreshToken&quot;, tokenData[&quot;RefreshToken&quot;]!.ToString());
+        }
+
+        [Fact]
+        public async Task Controller_ShouldReturnInternalServerError_WhenExceptionIsThrown()
+        {
+            // Arrange
+            var command = new LoginCommand
+            {
+                Username = &quot;TestUser&quot;,
+                Password = &quot;TestPassword123&quot;
+            };
+
+            _mediatorMock.Setup(x =&gt; x.Send(command, It.IsAny&lt;CancellationToken&gt;()))
+                .ThrowsAsync(new Exception());
+
+            // Act
+            var result = await _controller.GetUserLoginDetailsAsync(command, CancellationToken.None);
+
+            // Assert
+            var statusCodeResult = Assert.IsType&lt;ObjectResult&gt;(result);
+            Assert.Equal(500, statusCodeResult.StatusCode);
+        }
+
+    }
+}
+
+    </pre>
+    <script type="text/javascript">
+      highlightRanges([[27,9,27,29,1],[28,9,28,10,1],[29,13,29,51,1],[30,13,30,64,1],[31,13,31,61,1],[32,13,32,73,1],[33,13,33,73,1],[34,13,34,164,1],[35,13,35,68,1],[36,9,36,10,1],[40,9,40,10,1],[42,13,42,89,1],[43,13,43,106,1],[46,13,46,71,1],[46,71,46,109,1],[46,109,46,111,1],[47,9,47,10,1],[51,9,51,10,1],[53,13,53,89,1],[54,13,57,15,1],[58,13,58,99,1],[59,13,59,121,1],[62,13,62,83,1],[62,83,62,121,1],[62,121,62,123,1],[65,13,65,72,1],[66,9,66,10,1],[70,9,70,10,1],[72,13,72,89,1],[73,13,76,15,1],[77,13,77,66,1],[78,13,78,99,1],[79,13,79,120,1],[80,13,80,96,1],[81,13,81,114,1],[82,13,82,94,1],[83,13,83,130,1],[84,13,84,288,1],[87,13,87,86,1],[90,13,90,36,1],[91,13,91,76,1],[92,13,92,52,1],[93,13,93,52,1],[94,9,94,10,1],[98,9,98,10,1],[100,13,104,15,1],[106,13,111,15,1],[112,13,112,66,1],[113,13,113,96,1],[114,13,114,114,1],[115,13,115,94,1],[116,13,116,130,1],[118,13,119,37,1],[120,13,121,37,1],[122,13,123,38,1],[123,38,123,98,1],[123,98,124,55,1],[127,13,127,73,1],[131,13,131,87,1],[132,9,132,10,1],[136,9,136,10,1],[138,13,142,15,1],[144,13,145,130,1],[148,13,148,102,1],[151,13,151,66,1],[152,13,152,97,1],[153,13,153,78,1],[154,13,154,85,1],[155,9,155,10,1],[159,9,159,10,1],[161,13,165,15,1],[167,13,168,47,1],[171,13,171,102,1],[174,13,174,72,1],[175,13,175,60,1],[176,9,176,10,1]]);
+    </script>
+  </body>
+</html>

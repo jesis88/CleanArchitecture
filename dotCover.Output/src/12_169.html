@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>E:\CleanArchitecture\xUnitTesting\UserManagerWrapperUT.cs</title>
+    <script type="text/javascript" src="../js/dotcover.sourceview.js"></script>
+    <link rel="stylesheet" type="text/css" href="../css/dotcover.report.css" />
+  </head>
+  <body>
+    <pre id="content" class="source-code">
+using Application.Interfaces;
+using AutoMapper;
+using Domain.Entity;
+using Infrastructure.Persistence.Repositories;
+using Infrastructure.Wrappers;
+using Microsoft.AspNetCore.Identity;
+using Moq;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace xUnitTesting
+{
+    public class UserManagerWrapperUT
+    {
+        private readonly Mock&lt;IUserStore&lt;ApplicationUser&gt;&gt; _userStoreMock;
+        private readonly Mock&lt;UserManager&lt;ApplicationUser&gt;&gt; _userManagerMock;
+        private readonly Mock&lt;IMapper&gt; _mockMapper;
+        private readonly UserManagerWrapper _userManagerWrapper;
+
+        public UserManagerWrapperUT()
+        {
+            _userStoreMock = new Mock&lt;IUserStore&lt;ApplicationUser&gt;&gt;();
+            _userManagerMock = new Mock&lt;UserManager&lt;ApplicationUser&gt;&gt;(_userStoreMock.Object, null!, null!, null!, null!, null!, null!, null!, null!);
+            _mockMapper = new Mock&lt;IMapper&gt;();
+            _userManagerWrapper = new UserManagerWrapper(_userManagerMock.Object, _mockMapper.Object);
+        }
+
+        [Fact]
+        public async Task AddToRolesAsync_ShouldSucceed_WhenUserExists()
+        {
+            //arrange
+            var user = new User { Id = Guid.NewGuid().ToString(), UserName = &quot;AdminTest123&quot; };
+            var roles = new List&lt;string&gt; { Role.Admin.ToString() };
+
+            _userManagerMock.Setup(x =&gt; x.FindByNameAsync(user.UserName)).ReturnsAsync(new ApplicationUser { Id = user.Id, UserName = user.UserName });
+            _userManagerMock.Setup(x =&gt; x.AddToRolesAsync(It.IsAny&lt;ApplicationUser&gt;(), roles)).ReturnsAsync(IdentityResult.Success);
+
+            //Act
+            var result = await _userManagerWrapper.AddToRolesAsync(user, roles);
+
+            //Assert
+            Assert.NotNull(result);
+            Assert.True(result.Succeeded);
+        }
+
+        [Fact]
+        public async Task AddToRolesAsync_ShouldThrowUserNameIsNull_WhenUserDoesNotExists()
+        {
+            //arrange
+            var user = new User { Id = Guid.NewGuid().ToString() };
+            var roles = new List&lt;string&gt; { Role.Admin.ToString() };
+
+            _userManagerMock.Setup(x =&gt; x.FindByNameAsync(user.UserName!)).ReturnsAsync(new ApplicationUser { Id = user.Id, UserName = user.UserName });
+
+            //Act
+            var error = await Assert.ThrowsAsync&lt;InvalidOperationException&gt;(() =&gt; _userManagerWrapper.AddToRolesAsync(user, roles));
+
+            //Assert
+            Assert.Equal(&quot;Username is null&quot;, error.Message);
+        }
+
+        [Fact]
+        public async Task GetRolesAsync_ShouldReturn_CustomerRole()
+        {
+            //Arrange
+            var user = new User { Id = Guid.NewGuid().ToString(), UserName = &quot;TestUser&quot; };
+            var roles = new List&lt;string&gt; { Role.Customer.ToString() };
+            _userManagerMock.Setup(x =&gt; x.FindByNameAsync(user.UserName)).ReturnsAsync(new ApplicationUser { Id = user.Id, UserName = user.UserName });
+            _userManagerMock.Setup(x =&gt; x.GetRolesAsync(It.IsAny&lt;ApplicationUser&gt;())).ReturnsAsync(roles);
+
+            //Act
+            var result = await _userManagerWrapper.GetRolesAsync(user);
+
+            Assert.NotNull(result);
+            Assert.Equal(roles[0], result[0]);
+        }
+
+        [Fact]
+        public async Task CreateAsync_ShouldSucceed_WhenExistingUserCredentialsSent()
+        {
+            //Arrange
+            var user = new User { Id = Guid.NewGuid().ToString(), UserName = &quot;RegisteredUser123&quot; };
+            var password = &quot;UserRegisteredPassword123#&quot;;
+
+            _mockMapper.Setup(x =&gt; x.Map&lt;ApplicationUser&gt;(user)).Returns(new ApplicationUser { UserName = user.UserName});
+            _userManagerMock.Setup(x =&gt; x.CreateAsync(It.IsAny&lt;ApplicationUser&gt;(), password)).ReturnsAsync(IdentityResult.Success);
+
+            //Act
+            var result = await _userManagerWrapper.CreateAsync(user, password);
+
+
+            //Assert
+            Assert.NotNull(result);
+            Assert.True(result.Succeeded);
+        }
+
+        [Fact]
+        public async Task FindByNameAsync_ShouldReturnUser_WhenUserExistsWithUserName()
+        {
+            //Arrange
+            var userName = &quot;TestUser111&quot;;
+
+            _userManagerMock.Setup(x =&gt; x.FindByNameAsync(userName)).ReturnsAsync(new ApplicationUser { UserName = userName});
+            _mockMapper.Setup(x =&gt; x.Map&lt;User&gt;(It.IsAny&lt;ApplicationUser&gt;())).Returns(new User { Id = Guid.NewGuid().ToString(), UserName = userName});
+
+            //Act
+            var result = await _userManagerWrapper.FindByNameAsync(userName);
+
+            //Assert
+            Assert.NotNull(result);
+            Assert.Equal(userName, result.UserName);
+        }
+
+        [Fact]
+        public async Task FindByEmailAsync_ShouldReturnUser_WhenUserExists()
+        {
+            //Arrange
+            var email = &quot;testemail@gmail.com&quot;;
+
+            _mockMapper.Setup(x =&gt; x.Map&lt;User&gt;(It.IsAny&lt;ApplicationUser&gt;())).Returns(new User { Id = Guid.NewGuid().ToString(), Email = email});
+            _userManagerMock.Setup(x =&gt; x.FindByEmailAsync(email)).ReturnsAsync(new ApplicationUser { Email = email});
+
+            //Act
+            var result = await _userManagerWrapper.FindByEmailAsync(email);
+
+            //Assert
+            Assert.NotNull(result);
+            Assert.Equal(email, result.Email);
+        }
+
+        [Fact]
+        public async Task CheckPasswordAsync_ShouldReturnTrue_WhenCredentialsMatch()
+        {
+            //Arrage
+            var user = new User { Id = Guid.NewGuid().ToString(), UserName = &quot;TestUser111&quot; };
+            var password = &quot;TestUser123&quot;;
+
+            _userManagerMock.Setup(x =&gt; x.FindByNameAsync(user.UserName)).ReturnsAsync(new ApplicationUser { Id = user.Id, UserName = user.UserName});
+            _userManagerMock.Setup(x =&gt; x.CheckPasswordAsync(It.IsAny&lt;ApplicationUser&gt;(), password)).ReturnsAsync(true);
+
+            //Act
+            var result = await _userManagerWrapper.CheckPasswordAsync(user, password);
+
+            //Assert
+            Assert.True(result);
+        }
+    }
+}
+
+    </pre>
+    <script type="text/javascript">
+      highlightRanges([[23,9,23,38,1],[24,9,24,10,1],[25,13,25,70,1],[26,13,26,150,1],[27,13,27,47,1],[28,13,28,103,1],[29,9,29,10,1],[33,9,33,10,1],[35,13,35,95,1],[36,13,36,68,1],[38,13,38,152,1],[39,13,39,133,1],[42,13,42,81,1],[45,13,45,36,1],[46,13,46,43,1],[47,9,47,10,1],[51,9,51,10,1],[53,13,53,68,1],[54,13,54,68,1],[56,13,56,153,1],[59,13,59,83,1],[59,83,59,131,1],[59,131,59,133,1],[62,13,62,61,1],[63,9,63,10,1],[67,9,67,10,1],[69,13,69,91,1],[70,13,70,71,1],[71,13,71,152,1],[72,13,72,107,1],[75,13,75,72,1],[77,13,77,36,1],[78,13,78,47,1],[79,9,79,10,1],[83,9,83,10,1],[85,13,85,100,1],[86,13,86,57,1],[88,13,88,123,1],[89,13,89,132,1],[92,13,92,80,1],[96,13,96,36,1],[97,13,97,43,1],[98,9,98,10,1],[102,9,102,10,1],[104,13,104,42,1],[106,13,106,127,1],[107,13,107,151,1],[110,13,110,78,1],[113,13,113,36,1],[114,13,114,53,1],[115,9,115,10,1],[119,9,119,10,1],[121,13,121,47,1],[123,13,123,145,1],[124,13,124,119,1],[127,13,127,76,1],[130,13,130,36,1],[131,13,131,47,1],[132,9,132,10,1],[136,9,136,10,1],[138,13,138,94,1],[139,13,139,42,1],[141,13,141,151,1],[142,13,142,121,1],[145,13,145,87,1],[148,13,148,33,1],[149,9,149,10,1]]);
+    </script>
+  </body>
+</html>

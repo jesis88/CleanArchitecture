@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>E:\CleanArchitecture\Application\DependencyInjection.cs</title>
+    <script type="text/javascript" src="../js/dotcover.sourceview.js"></script>
+    <link rel="stylesheet" type="text/css" href="../css/dotcover.report.css" />
+  </head>
+  <body>
+    <pre id="content" class="source-code">
+using FluentValidation;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace Application
+{
+    public static class DependencyInjection
+    {
+        public static IServiceCollection AddApplication(this IServiceCollection services, IConfiguration configuration)
+        {
+            var assembly = typeof(DependencyInjection).Assembly;
+
+            services.AddMediatR(configuration =&gt; configuration.RegisterServicesFromAssembly(assembly));
+            services.AddValidatorsFromAssembly(assembly);
+
+            services.AddStackExchangeRedisCache(redisOptions =&gt;
+            {
+                string connection = configuration.GetConnectionString(&quot;Redis&quot;);
+                redisOptions.Configuration = connection;
+            });
+            return services;
+        }
+    }
+}
+
+    </pre>
+    <script type="text/javascript">
+      highlightRanges([[10,9,10,10,0],[11,13,11,65,0],[13,13,13,50,0],[13,50,13,102,0],[13,102,13,104,0],[14,13,14,58,0],[16,13,17,13,0],[17,13,17,14,0],[17,14,18,17,0],[18,17,18,80,0],[18,80,19,17,0],[19,17,19,57,0],[19,57,20,13,0],[20,13,20,14,0],[20,14,20,16,0],[21,13,21,29,0],[22,9,22,10,0]]);
+    </script>
+  </body>
+</html>

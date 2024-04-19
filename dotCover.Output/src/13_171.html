@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>E:\CleanArchitecture\xUnitTesting\CreateCustomerUT.cs</title>
+    <script type="text/javascript" src="../js/dotcover.sourceview.js"></script>
+    <link rel="stylesheet" type="text/css" href="../css/dotcover.report.css" />
+  </head>
+  <body>
+    <pre id="content" class="source-code">
+using API.Controllers;
+using Application.Behavior;
+using Application.EntityCustomer.Commands;
+using Application.EntityCustomer.Commands.CommandHandlers;
+using Application.Interfaces;
+using Domain.Entity;
+using FluentValidation;
+using Infrastructure.Persistence;
+using MediatR;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Moq;
+
+namespace CQRS_xUnitTesting
+{
+    public class CreateCustomerUT
+    {
+        private readonly CreateCustomerHandler _handler;
+        private readonly Mock&lt;IMediator&gt; _mockMediator;
+        private readonly CustomerController _controller;
+        private readonly Mock&lt;ICustomerWrapper&gt; _mockCustomer;
+        private readonly Mock&lt;IUserManagerWrapper&gt; _mockUserManager;
+
+        public CreateCustomerUT()
+        {
+            _mockMediator = new Mock&lt;IMediator&gt;();
+            _mockCustomer = new Mock&lt;ICustomerWrapper&gt;();
+            _mockUserManager = new Mock&lt;IUserManagerWrapper&gt;();
+            _handler = new CreateCustomerHandler(_mockCustomer.Object, _mockUserManager.Object);
+            _controller = new CustomerController(_mockMediator.Object);
+        }
+
+        [Theory]
+        [MemberData(nameof(CreateCustomerCommandTest.ValidData),MemberType = typeof(CreateCustomerCommandTest))]
+        public async Task Handle_ShouldCreateCustomer_WhenCommandIsValid(string name, string address, string phNumber, bool status, string userName)
+        {
+            //Arrage
+            var command = new CreateCustomerCommand
+            {
+                Name = name,
+                UserName = userName,
+                Address = address,
+                PhoneNumber = phNumber,
+                Active = status
+            };
+
+            _mockUserManager.Setup(x =&gt; x.FindByNameAsync(command.UserName))
+                .ReturnsAsync(new User 
+                { 
+                    Id = Guid.NewGuid().ToString(), 
+                    UserName = command.UserName,
+                    Email = &quot;jes88@gmail.com&quot;,
+                    Role = Role.Customer,
+                });
+            _mockCustomer.Setup(x =&gt; x.AddCustomer(It.IsAny&lt;Customer&gt;())).ReturnsAsync(1);
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            Assert.Equal(1, result);
+        }
+
+        [Theory]
+        [MemberData(nameof(CreateCustomerCommandTest.InvalidData), MemberType = typeof(CreateCustomerCommandTest))]
+        public void Handle_ShouldNotCreateCustomer_WhenEmptyUserName(string name, string address, string phNumber, bool status, string userName)
+        {
+            //Arrange
+            var command = new CreateCustomerCommand
+            {
+                Name = name,
+                UserName = userName,
+                Address = address,
+                PhoneNumber = phNumber,
+                Active = status
+            };
+
+            //Act and Assert
+            var validationResult = new CreateCustomerValidator().Validate(command);
+
+            Assert.True(validationResult.Errors.Count != 0);
+        }
+
+        [Theory]
+        [MemberData(nameof(CreateCustomerCommandTest.ValidData), MemberType = typeof(CreateCustomerCommandTest))]
+        public async Task Controller_ShouldReturnResponseOk_WithValidData(string name, string address, string phNumber, bool status, string userName)
+        {
+            //Arrange
+            var command = new CreateCustomerCommand
+            {
+                Name = name,
+                UserName = userName,
+                Address = address,
+                PhoneNumber = phNumber,
+                Active = status
+            };
+
+            _mockMediator.Setup( c =&gt; c.Send(command, It.IsAny&lt;CancellationToken&gt;()))
+                .ReturnsAsync(1);
+
+            //Act
+            var result = await _controller.CreateCustomer(command, CancellationToken.None);
+
+            var okResult = Assert.IsType&lt;OkObjectResult&gt;(result);
+            Assert.Equal(StatusCodes.Status200OK, okResult.StatusCode);
+        }
+
+        [Theory]
+        [MemberData(nameof(CreateCustomerCommandTest.ValidData), MemberType = typeof(CreateCustomerCommandTest))]
+        public async Task Controller_ShouldReturnResponseNull_AfterExceptionThrown(string name, string address, string phNumber, bool status, string userName)
+        {
+            //Arrange
+            var command = new CreateCustomerCommand
+            {
+                Name = name,
+                UserName = userName,
+                Address = address,
+                PhoneNumber = phNumber,
+                Active = status
+            };
+
+            _mockMediator.Setup(c =&gt; c.Send(command, It.IsAny&lt;CancellationToken&gt;())); //not setting any return type
+
+            //Act
+            var result = await _controller.CreateCustomer(command, CancellationToken.None);
+
+            //Assert
+            var statusCode = Assert.IsType&lt;ObjectResult&gt;(result);
+            Assert.Equal(500, statusCode.StatusCode);
+        }
+    }
+
+    public static class CreateCustomerCommandTest
+    {
+        public static IEnumerable&lt;object[]&gt; ValidData
+        {
+            get
+            {
+                yield return new object[]
+                {
+                    &quot;TestName&quot;,
+                    &quot;TestAddress&quot;,
+                    &quot;9813131313&quot;,
+                    true,
+                    &quot;TestUserName&quot;
+                };
+            }
+        }
+
+        public static IEnumerable&lt;object[]&gt; InvalidData
+        {
+            get
+            {
+                yield return new object[]
+                {
+                    &quot;testCustName&quot;,
+                    &quot;testAdd&quot;,
+                    &quot;9811111111&quot;,
+                    true,
+                    &quot;&quot;
+                };
+            }
+        }
+    }
+}
+
+    </pre>
+    <script type="text/javascript">
+      highlightRanges([[25,9,25,34,1],[26,9,26,10,1],[27,13,27,51,1],[28,13,28,58,1],[29,13,29,64,1],[30,13,30,97,1],[31,13,31,72,1],[32,9,32,10,1],[37,9,37,10,1],[39,13,46,15,1],[48,13,55,20,1],[56,13,56,91,1],[57,13,57,81,1],[59,13,59,37,1],[60,9,60,10,1],[65,9,65,10,1],[67,13,74,15,1],[77,13,77,84,1],[79,13,79,61,1],[80,9,80,10,1],[85,9,85,10,1],[87,13,94,15,1],[96,13,97,34,1],[100,13,100,92,1],[102,13,102,66,1],[103,13,103,72,1],[104,9,104,10,1],[109,9,109,10,1],[111,13,118,15,1],[120,13,120,86,1],[123,13,123,92,1],[126,13,126,66,1],[127,13,127,54,1],[128,9,128,10,1],[136,13,136,14,1],[137,17,144,19,1],[145,13,145,14,1],[151,13,151,14,1],[152,17,159,19,1],[160,13,160,14,1]]);
+    </script>
+  </body>
+</html>

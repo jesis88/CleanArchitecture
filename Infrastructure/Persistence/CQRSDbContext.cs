@@ -8,23 +8,26 @@ using System.Diagnostics.CodeAnalysis;
 namespace Infrastructure.Persistence
 {
     [ExcludeFromCodeCoverage]
-    public class CQRSDbContext : IdentityDbContext<ApplicationUser, IdentityRole<string>, string>
+    public class CqrsDbContext(DbContextOptions<CqrsDbContext> contextOptions) : IdentityDbContext<ApplicationUser, IdentityRole<string>, string>(contextOptions)
     {
-        public CQRSDbContext(DbContextOptions<CQRSDbContext> contextOptions) : base(contextOptions)
-        {
-
-        }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
-            /*builder.Entity<ApplicationUser>()
-            .Property(e => e.Id)
-            .ValueGeneratedOnAdd();*/
+
+            builder.Entity<Customer>()
+            .HasOne<ApplicationUser>()
+            .WithOne()
+            .HasForeignKey<Customer>(c => c.UserId);
+
+            builder.Entity<Order>()
+                .HasOne<Customer>()
+                .WithMany()
+                .HasForeignKey(o => o.CustomerId);
         }
 
-        /*public DbSet<Customer> Customers { get; set; }
+        public DbSet<Customer> Customers { get; set; }
 
-        public DbSet<Order> Orders { get; set; }*/
+        public DbSet<Order> Orders {  get; set; }
 
         public override DbSet<ApplicationUser> Users { get; set; }
     }

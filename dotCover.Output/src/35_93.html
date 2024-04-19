@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>E:\CleanArchitecture\Application\EntityUser\Query\GetUserListQuery.cs</title>
+    <script type="text/javascript" src="../js/dotcover.sourceview.js"></script>
+    <link rel="stylesheet" type="text/css" href="../css/dotcover.report.css" />
+  </head>
+  <body>
+    <pre id="content" class="source-code">
+using Domain.Entity;
+using MediatR;
+
+namespace Application.EntityUser.Query
+{
+    public class GetUserListQuery : IRequest&lt;List&lt;User&gt;&gt;
+    {
+        public int PageNumber { get; set; } = 1;
+        public int PageSize { get; set; } = 3;
+    }
+}
+    </pre>
+    <script type="text/javascript">
+      highlightRanges([[8,33,8,37,1],[8,38,8,42,1],[8,47,8,48,1],[9,31,9,35,1],[9,36,9,40,1],[9,45,9,46,1]]);
+    </script>
+  </body>
+</html>

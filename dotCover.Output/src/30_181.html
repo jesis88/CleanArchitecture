@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>E:\CleanArchitecture\Infrastructure\Persistence\Migrations\20240403100229_CustomerAdded.cs</title>
+    <script type="text/javascript" src="../js/dotcover.sourceview.js"></script>
+    <link rel="stylesheet" type="text/css" href="../css/dotcover.report.css" />
+  </head>
+  <body>
+    <pre id="content" class="source-code">
+using Microsoft.EntityFrameworkCore.Migrations;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
+
+#nullable disable
+
+namespace Infrastructure.Persistence.Migrations
+{
+    /// &lt;inheritdoc /&gt;
+    public partial class CustomerAdded : Migration
+    {
+        /// &lt;inheritdoc /&gt;
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.CreateTable(
+                name: &quot;Customers&quot;,
+                columns: table =&gt; new
+                {
+                    Id = table.Column&lt;int&gt;(type: &quot;integer&quot;, nullable: false)
+                        .Annotation(&quot;Npgsql:ValueGenerationStrategy&quot;, NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Name = table.Column&lt;string&gt;(type: &quot;text&quot;, nullable: true),
+                    Address = table.Column&lt;string&gt;(type: &quot;text&quot;, nullable: true),
+                    PhoneNumber = table.Column&lt;string&gt;(type: &quot;text&quot;, nullable: true),
+                    Active = table.Column&lt;bool&gt;(type: &quot;boolean&quot;, nullable: false),
+                    UserId = table.Column&lt;string&gt;(type: &quot;text&quot;, nullable: true)
+                },
+                constraints: table =&gt;
+                {
+                    table.PrimaryKey(&quot;PK_Customers&quot;, x =&gt; x.Id);
+                    table.ForeignKey(
+                        name: &quot;FK_Customers_AspNetUsers_UserId&quot;,
+                        column: x =&gt; x.UserId,
+                        principalTable: &quot;AspNetUsers&quot;,
+                        principalColumn: &quot;Id&quot;);
+                });
+
+            migrationBuilder.CreateIndex(
+                name: &quot;IX_Customers_UserId&quot;,
+                table: &quot;Customers&quot;,
+                column: &quot;UserId&quot;);
+        }
+
+        /// &lt;inheritdoc /&gt;
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.DropTable(
+                name: &quot;Customers&quot;);
+        }
+    }
+}
+
+    </pre>
+    <script type="text/javascript">
+      highlightRanges([[13,9,13,10,0],[14,13,16,35,0],[16,35,25,18,0],[25,18,27,17,0],[27,17,27,18,0],[27,18,28,21,0],[28,21,28,65,0],[28,65,29,21,0],[29,21,33,48,0],[33,48,34,17,0],[34,17,34,18,0],[34,18,34,20,0],[36,13,39,35,0],[40,9,40,10,0],[44,9,44,10,0],[45,13,46,36,0],[47,9,47,10,0]]);
+    </script>
+  </body>
+</html>

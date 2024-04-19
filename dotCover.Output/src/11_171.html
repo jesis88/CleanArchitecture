@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>E:\CleanArchitecture\xUnitTesting\RefreshTokenUT.cs</title>
+    <script type="text/javascript" src="../js/dotcover.sourceview.js"></script>
+    <link rel="stylesheet" type="text/css" href="../css/dotcover.report.css" />
+  </head>
+  <body>
+    <pre id="content" class="source-code">
+using API.Controllers;
+using Application.EntityUser.Query;
+using Application.EntityUser.Query.QueryHandler;
+using Application.Interfaces;
+using Domain.Entity;
+using Infrastructure.Services;
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
+using Moq;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+
+namespace xUnitTesting
+{
+    public class RefreshTokenUT
+    {
+        private readonly Mock&lt;IUserManagerWrapper&gt; _userManagerMock;
+        private readonly Mock&lt;IConfiguration&gt; _configurationMock;
+        private readonly Mock&lt;IRefreshTokenService&gt; _refreshTokenServiceMock;
+        private readonly RefreshTokenHandler _handler;
+        private readonly Mock&lt;IMediator&gt; _mediatorMock;
+        private readonly UserController _controller;
+
+        public RefreshTokenUT()
+        {
+            _userManagerMock = new Mock&lt;IUserManagerWrapper&gt;();
+            _configurationMock = new Mock&lt;IConfiguration&gt;();
+            _refreshTokenServiceMock = new Mock&lt;IRefreshTokenService&gt;();
+            _handler = new RefreshTokenHandler(_userManagerMock.Object, _configurationMock.Object, _refreshTokenServiceMock.Object);
+            _mediatorMock = new Mock&lt;IMediator&gt;();
+            _controller = new UserController(_mediatorMock.Object);
+
+            var roles = new List&lt;string&gt; { &quot;Admin&quot;, &quot;Customer&quot; };
+            _userManagerMock.Setup(x =&gt; x.FindByNameAsync(It.IsAny&lt;string&gt;()))
+                .ReturnsAsync(new User() { Id = Guid.NewGuid().ToString(), UserName = &quot;username&quot; });
+            _userManagerMock.Setup(x =&gt; x.GetRolesAsync(It.IsAny&lt;User&gt;()))
+                .ReturnsAsync(roles);
+            _configurationMock.Setup(x =&gt; x[&quot;Jwt:Key&quot;])
+                .Returns(&quot;R&lt;7(%~bhFarESf#QmA;P+UM*.B6jpcvV8?3C/Hw$g^5=KR&lt;7(%~bhFarESf#QmA;P+UM*.B6jpcvV8?3C/Hw$g^5=K&quot;);
+            _configurationMock.Setup(x =&gt; x[&quot;Jwt:Issuer&quot;])
+                .Returns(&quot;https://localhost:7019&quot;);
+            _refreshTokenServiceMock.Setup(x =&gt; x.AddRefreshToken(It.IsAny&lt;string&gt;(), It.IsAny&lt;string&gt;(), It.IsAny&lt;DateTime&gt;()));
+            _refreshTokenServiceMock.Setup(x =&gt; x.GetJWTAndRefreshToken(It.IsAny&lt;IUserManagerWrapper&gt;(), It.IsAny&lt;IConfiguration&gt;(), It.IsAny&lt;string&gt;(), It.IsAny&lt;User&gt;())).ReturnsAsync(JsonConvert.SerializeObject(new { AccessToken = &quot;TestJwtToken&quot;, RefreshToken = &quot;TestRefreshToken&quot; }));
+        }
+
+        [Fact]
+        public async Task Handle_WhenValidRefreshToken_ReturnJwtToken()
+        {
+            //Arrange
+            var refreshTokenQuery = new RefreshTokenQuery { RefreshToken = &quot;TestRefreshToken&quot; };
+            _refreshTokenServiceMock.Setup(x =&gt; x.GetRefreshToken(It.IsAny&lt;string&gt;())).Returns((UserName: &quot;username&quot;, ExpiryDate: DateTime.Now.AddMinutes(5)));
+            //Act
+            var result = await _handler.Handle(refreshTokenQuery, CancellationToken.None);
+
+            //Assert
+            Assert.NotNull(result);
+            var tokenData = JsonConvert.DeserializeObject&lt;dynamic&gt;(result);
+            Assert.NotNull(tokenData!.AccessToken);
+            Assert.NotNull(tokenData.RefreshToken);
+        }
+
+        [Fact]
+        public async Task Handle_ShouldThrowException_WhenNullRefreshToken()
+        {
+            //Arrange
+            var query = new RefreshTokenQuery { RefreshToken = &quot;invalid_refresh_token&quot; };
+            _refreshTokenServiceMock.Setup(x =&gt; x.GetRefreshToken(&quot;invalid_refresh_token&quot;)).Returns(value: null);
+
+            //Act and Assert
+            var error = await Assert.ThrowsAsync&lt;InvalidOperationException&gt;(() =&gt; _handler.Handle(query, default));
+            Assert.Equal(&quot;Invalid Refresh Token&quot;, error.Message);
+        }
+
+        [Fact]
+        public async Task Handle_ShouldThrowException_WhenExpiredRefreshToken()
+        {
+            //Arrange
+            var query = new RefreshTokenQuery { RefreshToken = &quot;expired_refresh_token&quot; };
+            _refreshTokenServiceMock.Setup(x =&gt; x.GetRefreshToken(It.IsAny&lt;string&gt;()))
+                .Returns((UserName: &quot;username&quot;, ExpiryDate: DateTime.Now.AddMinutes(-1)));
+
+            //Act and Assert
+            var error = await Assert.ThrowsAsync&lt;InvalidOperationException&gt;(() =&gt; _handler.Handle(query, default));
+            Assert.Equal(&quot;Refresh Token has expired&quot;, error.Message);
+        }
+
+        [Fact]
+        public async Task Handle_ShouldThrowException_WhenInvalidUser()
+        {
+            //Arrange
+            var query = new RefreshTokenQuery { RefreshToken = &quot;valid_refresh_token&quot; };
+            _refreshTokenServiceMock.Setup(x =&gt; x.GetRefreshToken(It.IsAny&lt;string&gt;()))
+                .Returns((UserName: &quot;invalid_username&quot;, ExpiryDate: DateTime.Now.AddMinutes(5)));
+            _userManagerMock.Setup(x =&gt; x.FindByNameAsync(It.IsAny&lt;string&gt;()))
+                .ReturnsAsync((User)null!);
+
+            //Act and Assert
+            var error = await Assert.ThrowsAsync&lt;InvalidOperationException&gt;(() =&gt; _handler.Handle(query, default));
+            Assert.Equal(&quot;Invalid User&quot;, error.Message);
+        }
+
+        [Fact]
+        public async Task Controller_ShouldReturnOk_WhenRefreshTokenValid()
+        {
+            // Arrange
+            var query = new RefreshTokenQuery
+            {
+                RefreshToken = &quot;ValidRefreshToken&quot;
+            };
+
+            _mediatorMock.Setup(x =&gt; x.Send(query, It.IsAny&lt;CancellationToken&gt;()))
+                .ReturnsAsync(JsonConvert.SerializeObject(new { AccessToken = &quot;testToken&quot;, RefreshToken = &quot;testRefreshToken&quot; }));
+
+            // Act
+            var result = await _controller.RefreshToken(query, CancellationToken.None);
+
+            // Assert
+            var okResult = Assert.IsType&lt;OkObjectResult&gt;(result);
+            var tokenData = JsonConvert.DeserializeObject&lt;JObject&gt;(okResult.Value!.ToString()!);
+            Assert.Equal(&quot;testToken&quot;, tokenData![&quot;AccessToken&quot;]!.ToString());
+            Assert.Equal(&quot;testRefreshToken&quot;, tokenData[&quot;RefreshToken&quot;]!.ToString());
+        }
+
+        [Fact]
+        public async Task Controller_ShouldReturnInternalServerError_WhenExceptionIsThrown()
+        {
+            // Arrange
+            var query = new RefreshTokenQuery
+            {
+                RefreshToken = &quot;InvalidRefreshToken&quot;
+            };
+
+            _mediatorMock.Setup(x =&gt; x.Send(query, It.IsAny&lt;CancellationToken&gt;()))
+                .ThrowsAsync(new Exception(&quot;Test exception&quot;));
+
+            // Act
+            var result = await _controller.RefreshToken(query, CancellationToken.None);
+
+            // Assert
+            var statusCodeResult = Assert.IsType&lt;ObjectResult&gt;(result);
+            Assert.Equal(500, statusCodeResult.StatusCode);
+        }
+
+        [Fact]
+        public void GetRefreshToken_ReturnCorrectToken()
+        {
+            //Arrange
+            var refreshToken = &quot;testToken&quot;;
+            var expectedUsername = &quot;testUser&quot;;
+            var expectedExpiryDate = DateTime.Now.AddDays(1);
+            var refreshTokenService = new RefreshTokenService();
+            refreshTokenService.AddRefreshToken(refreshToken, expectedUsername, expectedExpiryDate);
+
+            //Act
+            var result = refreshTokenService.GetRefreshToken(refreshToken);
+
+            //Assert
+            Assert.NotNull(result);
+            Assert.Equal(expectedUsername, result.Value.UserName);
+            Assert.Equal(expectedExpiryDate, result.Value.ExpiryDate);
+        }
+
+        [Fact]
+        public void GetRefreshToken_ReturnNull_WhenTokenDoesNotExist()
+        {
+            //Arrange
+            var refreshTokenService = new RefreshTokenService();
+
+            //Act
+            var result = refreshTokenService.GetRefreshToken(&quot;nonexistingToken&quot;);
+
+            //Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void GetUserName_ReturnsCorrectUserName()
+        {
+            //Arrange
+            var expectedUsername = &quot;testUser&quot;;
+            var refreshTokenService = new RefreshTokenService();
+            refreshTokenService.AddRefreshToken(&quot;token1&quot;, expectedUsername, DateTime.Now.AddDays(1));
+
+            //Act
+            var result = refreshTokenService.GetUserName();
+
+            //Assert
+            Assert.NotNull(result);
+            Assert.Equal(expectedUsername, result);
+        }
+    }
+}
+
+    </pre>
+    <script type="text/javascript">
+      highlightRanges([[25,9,25,32,1],[26,9,26,10,1],[27,13,27,64,1],[28,13,28,61,1],[29,13,29,73,1],[30,13,30,133,1],[31,13,31,51,1],[32,13,32,68,1],[34,13,34,66,1],[35,13,36,101,1],[37,13,38,38,1],[39,13,40,120,1],[41,13,42,52,1],[43,13,43,130,1],[44,13,44,288,1],[45,9,45,10,1],[49,9,49,10,1],[51,13,51,97,1],[52,13,52,160,1],[54,13,54,91,1],[57,13,57,36,1],[58,13,58,76,1],[59,13,59,52,1],[60,13,60,52,1],[61,9,61,10,1],[65,9,65,10,1],[67,13,67,90,1],[68,13,68,114,1],[71,13,71,83,1],[71,83,71,114,1],[71,114,71,116,1],[72,13,72,66,1],[73,9,73,10,1],[77,9,77,10,1],[79,13,79,90,1],[80,13,81,91,1],[84,13,84,83,1],[84,83,84,114,1],[84,114,84,116,1],[85,13,85,70,1],[86,9,86,10,1],[90,9,90,10,1],[92,13,92,88,1],[93,13,94,98,1],[95,13,96,44,1],[99,13,99,83,1],[99,83,99,114,1],[99,114,99,116,1],[100,13,100,57,1],[101,9,101,10,1],[105,9,105,10,1],[107,13,110,15,1],[112,13,113,130,1],[116,13,116,88,1],[119,13,119,66,1],[120,13,120,97,1],[121,13,121,78,1],[122,13,122,85,1],[123,9,123,10,1],[127,9,127,10,1],[129,13,132,15,1],[134,13,135,63,1],[138,13,138,88,1],[141,13,141,72,1],[142,13,142,60,1],[143,9,143,10,1],[147,9,147,10,1],[149,13,149,44,1],[150,13,150,47,1],[151,13,151,62,1],[152,13,152,65,1],[153,13,153,101,1],[156,13,156,76,1],[159,13,159,36,1],[160,13,160,67,1],[161,13,161,71,1],[162,9,162,10,1],[166,9,166,10,1],[168,13,168,65,1],[171,13,171,82,1],[174,13,174,33,1],[175,9,175,10,1],[179,9,179,10,1],[181,13,181,47,1],[182,13,182,65,1],[183,13,183,102,1],[186,13,186,60,1],[189,13,189,36,1],[190,13,190,52,1],[191,9,191,10,1]]);
+    </script>
+  </body>
+</html>

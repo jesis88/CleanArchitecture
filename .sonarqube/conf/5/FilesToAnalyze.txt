@@ -1,0 +1,3 @@
+﻿E:\CleanArchitecture\Domain\Entity\Customer.cs
+E:\CleanArchitecture\Domain\Entity\Order.cs
+E:\CleanArchitecture\Domain\Entity\User.cs

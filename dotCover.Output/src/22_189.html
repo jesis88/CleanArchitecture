@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>E:\CleanArchitecture\API\Controllers\CustomerController.cs</title>
+    <script type="text/javascript" src="../js/dotcover.sourceview.js"></script>
+    <link rel="stylesheet" type="text/css" href="../css/dotcover.report.css" />
+  </head>
+  <body>
+    <pre id="content" class="source-code">
+using Application.EntityCustomer.Commands;
+using MediatR;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
+
+namespace API.Controllers
+{
+    [Route(&quot;api/[controller]&quot;)]
+    [ApiController]
+    public class CustomerController : ControllerBase
+    {
+        private readonly IMediator _mediator;
+        public CustomerController(IMediator mediator)
+        {
+            _mediator = mediator;
+        }
+
+        [Authorize(Roles = &quot;Admin&quot;)]
+        [HttpGet(&quot;Tokens&quot;)]
+        public IActionResult TestAuthorization()
+        {
+            return Ok(&quot;You&#39;re Authorized as Admin&quot;);
+        }
+
+        [HttpPost]
+        public async Task&lt;IActionResult&gt; CreateCustomer(CreateCustomerCommand command, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var response = await _mediator.Send(command, cancellationToken);
+                return response != 1 ? throw new InvalidOperationException(&quot;Response is null!&quot;) : Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $&quot;Internal Server Error: {ex.Message}&quot;);
+            }
+        }
+
+    }
+}
+
+    </pre>
+    <script type="text/javascript">
+      highlightRanges([[14,9,14,54,0],[15,9,15,10,0],[16,13,16,34,0],[17,9,17,10,0],[22,9,22,10,0],[23,13,23,53,0],[24,9,24,10,0],[28,9,28,10,0],[30,13,30,14,0],[31,17,31,81,0],[32,17,32,112,0],[34,13,34,33,0],[35,13,35,14,0],[36,17,36,80,0],[38,9,38,10,0]]);
+    </script>
+  </body>
+</html>

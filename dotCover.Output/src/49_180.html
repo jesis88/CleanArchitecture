@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>E:\CleanArchitecture\API\Program.cs</title>
+    <script type="text/javascript" src="../js/dotcover.sourceview.js"></script>
+    <link rel="stylesheet" type="text/css" href="../css/dotcover.report.css" />
+  </head>
+  <body>
+    <pre id="content" class="source-code">
+using Application;
+using Infrastructure;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Any;
+using Microsoft.OpenApi.Models;
+using Serilog;
+using Swashbuckle.AspNetCore.SwaggerGen;
+using System.Text;
+using System.Text.Json.Serialization;
+
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container.
+builder.Services.
+    AddControllers()
+    .AddJsonOptions(options =&gt; options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+
+builder.Services
+    .AddApplication(builder.Configuration)
+    .AddInfrastructure(builder.Configuration);
+
+builder.Host.UseSerilog((context, configuration) =&gt; configuration.ReadFrom.Configuration(context.Configuration));
+
+var jwtKey = builder.Configuration[&quot;Jwt:Key&quot;];
+if(jwtKey != null)
+{
+    builder.Services.AddAuthentication(options =&gt;
+    {
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(&quot;Bearer&quot;, options =&gt;
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration[&quot;Jwt:Issuer&quot;],
+            ValidAudience = builder.Configuration[&quot;Jwt:Issuer&quot;],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+            ClockSkew = TimeSpan.Zero
+        };
+    });
+}
+
+// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =&gt;
+{
+    c.SwaggerDoc(&quot;v1&quot;, new OpenApiInfo { Title = &quot;My API&quot;, Version = &quot;v1&quot; });
+
+    // Define the BearerAuth scheme
+    c.AddSecurityDefinition(&quot;BearerAuth&quot;, new OpenApiSecurityScheme
+    {
+        Type = SecuritySchemeType.Http,
+        Scheme = &quot;bearer&quot;,
+        BearerFormat = &quot;JWT&quot;,
+        Description = &quot;Input your Bearer token only to access this API&quot;,
+    });
+    // Apply the BearerAuth scheme globally to all API operations
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+            {
+                {
+                    new OpenApiSecurityScheme
+                    {
+                        Reference = new OpenApiReference
+                        {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = &quot;BearerAuth&quot;
+                        }
+                    },
+                    Array.Empty&lt;string&gt;()
+                }
+            });
+});
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(c =&gt;
+    {
+        c.SwaggerEndpoint(&quot;/swagger/v1/swagger.json&quot;, &quot;My API V1&quot;);
+    });
+}
+
+app.UseSerilogRequestLogging();
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapControllers();
+app.UseHttpsRedirection();
+
+using (var scope = app.Services.CreateScope())
+{
+    var roleManager = scope.ServiceProvider.GetRequiredService&lt;RoleManager&lt;IdentityRole&lt;string&gt;&gt;&gt;();
+    var roles = new[] { &quot;Admin&quot;, &quot;Customer&quot; };
+    foreach (var role in roles)
+    {
+        if (!await roleManager.RoleExistsAsync(role))
+            await roleManager.CreateAsync(new IdentityRole(role));
+    }
+}
+
+app.Run();
+
+    </pre>
+    <script type="text/javascript">
+      highlightRanges([[15,1,15,50,0],[18,1,20,32,0],[20,32,20,107,0],[20,107,20,109,0],[22,1,24,47,0],[26,1,26,53,0],[26,53,26,112,0],[26,112,26,114,0],[28,1,28,47,0],[29,1,29,19,0],[30,1,30,2,0],[31,5,32,5,0],[32,5,32,6,0],[32,6,33,9,0],[33,9,33,84,0],[33,84,34,9,0],[34,9,34,81,0],[34,81,35,5,0],[35,5,35,6,0],[35,6,37,5,0],[37,5,37,6,0],[37,6,38,9,0],[38,9,48,11,0],[48,11,49,5,0],[49,5,49,6,0],[49,6,49,8,0],[50,1,50,2,0],[53,1,53,44,0],[54,1,55,1,0],[55,1,55,2,0],[55,2,56,5,0],[56,5,56,78,0],[56,78,59,5,0],[59,5,65,8,0],[65,8,67,5,0],[67,5,80,16,0],[80,16,81,1,0],[81,1,81,2,0],[81,2,81,4,0],[83,1,83,27,0],[86,1,86,37,0],[87,1,87,2,0],[88,5,88,22,0],[89,5,90,5,0],[90,5,90,6,0],[90,6,91,9,0],[91,9,91,68,0],[91,68,92,5,0],[92,5,92,6,0],[92,6,92,8,0],[93,1,93,2,0],[95,1,95,32,0],[97,1,97,25,0],[98,1,98,24,0],[100,1,100,22,0],[101,1,101,27,0],[103,8,103,46,0],[104,1,104,2,0],[105,5,105,101,0],[106,5,106,47,0],[107,5,107,12,0],[107,14,107,22,0],[107,23,107,25,0],[107,26,107,31,0],[108,5,108,6,0],[109,9,109,54,0],[110,13,110,67,0],[111,5,111,6,0],[112,1,112,2,0],[114,1,114,11,0]]);
+    </script>
+  </body>
+</html>

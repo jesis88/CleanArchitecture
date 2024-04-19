@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>E:\CleanArchitecture\Infrastructure\Wrappers\RoleManagerWrapper.cs</title>
+    <script type="text/javascript" src="../js/dotcover.sourceview.js"></script>
+    <link rel="stylesheet" type="text/css" href="../css/dotcover.report.css" />
+  </head>
+  <body>
+    <pre id="content" class="source-code">
+
+using Application.Interfaces;
+using Microsoft.AspNetCore.Identity;
+
+namespace Infrastructure.Wrappers
+{
+    public class RoleManagerWrapper : IRoleManagerWrapper
+    {
+        private readonly RoleManager&lt;IdentityRole&lt;string&gt;&gt; _roleManager;
+
+        public RoleManagerWrapper(RoleManager&lt;IdentityRole&lt;string&gt;&gt; roleManager)
+        {
+            _roleManager = roleManager;
+        }
+
+        public Task&lt;bool&gt; RoleExistsAsync(string roleName)
+        {
+            return _roleManager.RoleExistsAsync(roleName);
+        }
+    }
+}
+
+    </pre>
+    <script type="text/javascript">
+      highlightRanges([[11,9,11,81,0],[12,9,12,10,0],[13,13,13,40,0],[14,9,14,10,0],[17,9,17,10,0],[18,13,18,59,0],[19,9,19,10,0]]);
+    </script>
+  </body>
+</html>

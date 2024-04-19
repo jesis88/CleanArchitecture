@@ -1,0 +1,13 @@
+﻿E:\CleanArchitecture\API\Controllers\CustomerController.cs
+E:\CleanArchitecture\API\Controllers\UserController.cs
+E:\CleanArchitecture\API\Program.cs
+E:\CleanArchitecture\API\obj\Debug\net8.0\API.GlobalUsings.g.cs
+E:\CleanArchitecture\API\obj\Debug\net8.0\.NETCoreApp,Version=v8.0.AssemblyAttributes.cs
+E:\CleanArchitecture\API\obj\Debug\net8.0\API.AssemblyInfo.cs
+E:\CleanArchitecture\API\obj\Debug\net8.0\API.MvcApplicationPartsAssemblyInfo.cs
+E:\CleanArchitecture\API\appsettings.Development.json
+E:\CleanArchitecture\API\appsettings.json
+E:\CleanArchitecture\API\API.http
+E:\CleanArchitecture\API\Dockerfile
+E:\CleanArchitecture\API\Properties\launchSettings.json
+E:\CleanArchitecture\.dockerignore

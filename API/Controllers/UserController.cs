@@ -1,21 +1,17 @@
-﻿using Application.Commands;
+﻿using Application.EntityUser.Commands;
+using Application.EntityUser.Query;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers
 {
+    
     [Route("api/[controller]")]
     [ApiController]
-    public class UserController : ControllerBase
+    public class UserController(IMediator mediator) : ControllerBase
     {
-        private readonly IMediator _mediator;
-
-        public UserController(IMediator mediator)
-        {
-            _mediator = mediator;
-        }
-        
+        private readonly IMediator _mediator = mediator;
 
         [AllowAnonymous]
         [HttpPost("Registration")]
@@ -47,7 +43,7 @@ namespace API.Controllers
             }
         }
 
-        /*[HttpPost("RefreshToken")]
+        [HttpPost("RefreshToken")]
         public async Task<IActionResult> RefreshToken([FromQuery] RefreshTokenQuery query, CancellationToken cancellationToken)
         {
             try
@@ -61,12 +57,12 @@ namespace API.Controllers
             }
         }
 
+        /*[Authorize(Roles = "Admin")]*/
         [HttpGet("UserList")]
-        public async Task<IActionResult> GetUserListAsync(CancellationToken cancellationToken)
+        public async Task<IActionResult> GetUserListAsync([FromQuery]GetUserListQuery query, CancellationToken cancellationToken)
         {
             try
             {
-                var query = new GetUserListQuery();
                 var response = await _mediator.Send(query, cancellationToken);
                 return Ok(response);
             }
@@ -74,7 +70,7 @@ namespace API.Controllers
             {
                 return StatusCode(500, $"Internal Server Error: {ex.Message}");
             }
-        }*/
+        }
 
     }
 }

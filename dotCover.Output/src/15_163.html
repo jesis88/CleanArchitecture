@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>E:\CleanArchitecture\xUnitTesting\UserManagerWrapperUT.cs</title>
+    <script type="text/javascript" src="../js/dotcover.sourceview.js"></script>
+    <link rel="stylesheet" type="text/css" href="../css/dotcover.report.css" />
+  </head>
+  <body>
+    <pre id="content" class="source-code">
+using AutoMapper;
+using Domain.Entity;
+using Infrastructure.Persistence.Repositories;
+using Infrastructure.Wrappers;
+using Microsoft.AspNetCore.Identity;
+using Moq;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace xUnitTesting
+{
+    public class UserManagerWrapperUT
+    {
+
+        [Fact]
+        public async Task AddToRolesAsync_ShouldSucceed_WhenUserExists()
+        {
+            //arrange
+            var mockUserManager = new Mock&lt;UserManager&lt;ApplicationUser&gt;&gt;();
+            var mockMapper = new Mock&lt;IMapper&gt;();
+            var userManagerWrapper = new UserManagerWrapper(mockUserManager.Object, mockMapper.Object);
+            var user = new User { Id = Guid.NewGuid().ToString() };
+            var roles = new List&lt;string&gt; { Role.Admin.ToString() };
+
+            mockUserManager.Setup(x =&gt; x.FindByIdAsync(user.Id)).ReturnsAsync(new ApplicationUser { Id = user.Id });
+            mockUserManager.Setup(x =&gt; x.AddToRolesAsync(It.IsAny&lt;ApplicationUser&gt;(), roles)).ReturnsAsync(IdentityResult.Success);
+
+            //Act
+            var result = await userManagerWrapper.AddToRolesAsync(user, roles);
+
+            //Assert
+            Assert.NotNull(result);
+            Assert.True(result.Succeeded);
+        }
+    }
+}
+
+    </pre>
+    <script type="text/javascript">
+      highlightRanges([[20,9,20,10,1],[22,13,22,76,1],[23,13,23,50,1],[24,13,24,104,1],[25,13,25,68,0],[26,13,26,68,0],[28,13,28,117,0],[29,13,29,132,0],[32,13,32,80,0],[35,13,35,36,0],[36,13,36,43,0],[37,9,37,10,0]]);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,14 @@
+﻿E:\CleanArchitecture\xUnitTesting\CreateCustomerUT.cs
+E:\CleanArchitecture\xUnitTesting\CreateUserUT.cs
+E:\CleanArchitecture\xUnitTesting\EmailServiceUT.cs
+E:\CleanArchitecture\xUnitTesting\GetUserUT.cs
+E:\CleanArchitecture\xUnitTesting\LoginUserUT.cs
+E:\CleanArchitecture\xUnitTesting\RefreshTokenUT.cs
+E:\CleanArchitecture\xUnitTesting\UserManagerWrapperUT.cs
+C:\Users\jesis maharjan\.nuget\packages\microsoft.net.test.sdk\17.8.0\build\netcoreapp3.1\Microsoft.NET.Test.Sdk.Program.cs
+C:\Users\jesis maharjan\.nuget\packages\microsoft.testplatform.testhost\17.8.0\build\netcoreapp3.1\x64\testhost.exe
+C:\Users\jesis maharjan\.nuget\packages\microsoft.testplatform.testhost\17.8.0\build\netcoreapp3.1\x64\testhost.dll
+C:\Users\jesis maharjan\.nuget\packages\xunit.runner.visualstudio\2.5.3\build\net6.0\xunit.runner.visualstudio.dotnetcore.testadapter.dll
+C:\Users\jesis maharjan\.nuget\packages\xunit.runner.visualstudio\2.5.3\build\net6.0\xunit.runner.reporters.netcoreapp10.dll
+C:\Users\jesis maharjan\.nuget\packages\xunit.runner.visualstudio\2.5.3\build\net6.0\xunit.runner.utility.netcoreapp10.dll
+E:\CleanArchitecture\xUnitTesting\TestResults\8839dc81-2082-4cb8-9698-e93a14c16e6a\coverage.cobertura.xml

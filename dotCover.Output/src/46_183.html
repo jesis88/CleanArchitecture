@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>E:\CleanArchitecture\Application\Behavior\UserRegisterValidator.cs</title>
+    <script type="text/javascript" src="../js/dotcover.sourceview.js"></script>
+    <link rel="stylesheet" type="text/css" href="../css/dotcover.report.css" />
+  </head>
+  <body>
+    <pre id="content" class="source-code">
+using Application.EntityUser.Commands;
+using Application.Interfaces;
+using FluentValidation;
+
+namespace Application.Behavior
+{
+    public class UserRegisterValidator : AbstractValidator&lt;CreateUserCommand&gt;
+    {
+        private readonly IUserManagerWrapper _userManagerWrapper;
+        public UserRegisterValidator(IUserManagerWrapper userManagerWrapper)
+        {
+            _userManagerWrapper = userManagerWrapper;
+            RuleFor(user =&gt; user.UserName)
+                .NotNull()
+                .WithMessage(&quot;Username is required.&quot;)
+                .Length(4, 50)
+                .WithMessage(&quot;Username must be between 4 to 50 characters.&quot;);
+
+            RuleFor(user =&gt; user.Email)
+                .NotNull()
+                .WithMessage(&quot;Email is required.&quot;)
+                .Length(4, 80)
+                .WithMessage(&quot;Email must be between 4 to 80 characters.&quot;)
+                .Must(email =&gt; !EmailAlreadyExists(email))
+                .WithMessage(&quot;The email already exist.&quot;);
+
+            RuleFor(user =&gt; user.Password)
+                .NotNull()
+                .WithMessage(&quot;Password is required.&quot;)
+                .Length(8, 100)
+                .WithMessage(&quot;Password must be between 8 to 100 characters.&quot;);
+
+            RuleFor(user =&gt; user.ConfirmPassword)
+                .NotNull()
+                .WithMessage(&quot;Confirm Password is required.&quot;)
+                .Length(8, 100)
+                .WithMessage(&quot;Confirm Password must be between 8 to 100 characters.&quot;)
+                .Equal(user =&gt; user.Password)
+                .WithMessage(&quot;Passwords must match!&quot;);
+
+            RuleFor(user =&gt; user.Role)
+                .NotNull()
+                .WithMessage(&quot;Role must be set&quot;)
+                .IsInEnum()
+                .WithMessage(&quot;Role is not valid&quot;);
+        }
+        public bool EmailAlreadyExists(string email)
+        {
+            var result = _userManagerWrapper.FindByEmailAsync(email).Result;
+            return result == null;
+        }
+    }
+}
+
+    </pre>
+    <script type="text/javascript">
+      highlightRanges([[10,9,10,77,1],[11,9,11,10,1],[12,13,12,54,1],[13,13,17,78,1],[19,13,24,32,1],[24,32,24,58,1],[24,58,25,58,1],[27,13,31,79,1],[33,13,39,55,1],[41,13,45,51,1],[46,9,46,10,1],[48,9,48,10,1],[49,13,49,77,1],[50,13,50,35,1],[51,9,51,10,1]]);
+    </script>
+  </body>
+</html>

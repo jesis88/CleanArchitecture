@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>E:\CleanArchitecture\Application\EntityCustomer\Commands\CommandHandlers\CreateCustomerHandler.cs</title>
+    <script type="text/javascript" src="../js/dotcover.sourceview.js"></script>
+    <link rel="stylesheet" type="text/css" href="../css/dotcover.report.css" />
+  </head>
+  <body>
+    <pre id="content" class="source-code">
+using Application.Interfaces;
+using Domain.Entity;
+using FluentValidation;
+using MediatR;
+
+namespace Application.EntityCustomer.Commands.CommandHandlers
+{
+    public class CreateCustomerHandler(ICustomerWrapper customerDbWrapper, IUserManagerWrapper userManager) : IRequestHandler&lt;CreateCustomerCommand, int&gt;
+    {
+        private readonly ICustomerWrapper _customerDbWrapper = customerDbWrapper;
+        private readonly IUserManagerWrapper _userManager = userManager;
+
+        public async Task&lt;int&gt; Handle(CreateCustomerCommand command, CancellationToken cancellationToken)
+        {
+            var user  = await _userManager.FindByNameAsync(command.UserName);
+            var newCustomer = new Customer
+            {
+                Name = command.Name,
+                Address = command.Address,
+                PhoneNumber = command.PhoneNumber,
+                UserId = user!.Id
+            };
+
+            return await _customerDbWrapper.AddCustomer(newCustomer);
+        }
+    }
+}
+
+    </pre>
+    <script type="text/javascript">
+      highlightRanges([[8,18,8,108,0],[10,9,10,82,0],[11,9,11,73,0],[14,9,14,10,0],[15,13,15,78,0],[16,13,22,15,0],[24,13,24,70,0],[25,9,25,10,0]]);
+    </script>
+  </body>
+</html>

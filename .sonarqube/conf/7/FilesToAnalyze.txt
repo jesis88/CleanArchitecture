@@ -1,0 +1,15 @@
+﻿E:\CleanArchitecture\Infrastructure\DependencyInjection.cs
+E:\CleanArchitecture\Infrastructure\MappingProfiles\ApplicationUserProfile.cs
+E:\CleanArchitecture\Infrastructure\Persistence\CqrsDbContext.cs
+E:\CleanArchitecture\Infrastructure\Persistence\DesignTimeDbContextFactory.cs
+E:\CleanArchitecture\Infrastructure\Persistence\Migrations\20240401112431_InitialCreate.cs
+E:\CleanArchitecture\Infrastructure\Persistence\Migrations\20240401112431_InitialCreate.Designer.cs
+E:\CleanArchitecture\Infrastructure\Persistence\Migrations\20240403100229_CustomerAdded.cs
+E:\CleanArchitecture\Infrastructure\Persistence\Migrations\20240403100229_CustomerAdded.Designer.cs
+E:\CleanArchitecture\Infrastructure\Persistence\Migrations\CQRSDbContextModelSnapshot.cs
+E:\CleanArchitecture\Infrastructure\Persistence\Repositories\ApplicationUser.cs
+E:\CleanArchitecture\Infrastructure\Services\EmailService.cs
+E:\CleanArchitecture\Infrastructure\Services\RefreshTokenService.cs
+E:\CleanArchitecture\Infrastructure\Wrappers\CustomerWrapper.cs
+E:\CleanArchitecture\Infrastructure\Wrappers\RoleManagerWrapper.cs
+E:\CleanArchitecture\Infrastructure\Wrappers\UserManagerWrapper.cs

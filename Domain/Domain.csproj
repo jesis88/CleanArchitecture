@@ -1,14 +1,12 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <ProjectGuid>{D8E237A0-B2D8-475C-B1C7-3EE2ECDADDF9}</ProjectGuid>
   </PropertyGroup>
-
   <ItemGroup>
     <None Remove="Entity\User.cs~RF908a9f.TMP" />
     <None Remove="Entity\User.cs~RF91d2cf.TMP" />
   </ItemGroup>
-
 </Project>

@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-
-namespace Domain.Entity
+﻿namespace Domain.Entity
 {
     public class User
     {

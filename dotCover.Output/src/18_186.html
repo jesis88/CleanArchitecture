@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>E:\CleanArchitecture\Application\EntityUser\Commands\CommandHandlers\LoginHandler.cs</title>
+    <script type="text/javascript" src="../js/dotcover.sourceview.js"></script>
+    <link rel="stylesheet" type="text/css" href="../css/dotcover.report.css" />
+  </head>
+  <body>
+    <pre id="content" class="source-code">
+using MediatR;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using Newtonsoft.Json;
+using System.Security.Cryptography;
+using Hangfire;
+using FluentValidation;
+using Application.Interfaces;
+using Microsoft.Extensions.Configuration;
+using Application.EntityUser.Commands;
+
+namespace Application.EntityUser.Commands.CommandHandlers
+{
+    public class LoginHandler : IRequestHandler&lt;LoginCommand, string&gt;
+    {
+        private readonly IUserManagerWrapper _userManager;
+        private readonly IConfiguration _configuration;
+        private readonly IRefreshTokenService _refreshTokenService;
+        private readonly IBackgroundJobClient _backgroundJobClient;
+
+        public LoginHandler(IUserManagerWrapper userManager, IConfiguration configuration, IRefreshTokenService refreshTokenService, IBackgroundJobClient backgroundJobClient)
+        {
+            _userManager = userManager;
+            _configuration = configuration;
+            _refreshTokenService = refreshTokenService;
+            _backgroundJobClient = backgroundJobClient;
+        }
+
+        public async Task&lt;string&gt; Handle(LoginCommand command, CancellationToken cancellationToken)
+        {
+            var user = await _userManager.FindByNameAsync(command.Username);
+            if (user != null &amp;&amp; await _userManager.CheckPasswordAsync(user, command.Password))
+            {
+                //store recent logged in date (for welcome mail)
+                if (!user.RecentLogin.HasValue || user.RecentLogin.Value.AddMinutes(1) &lt;= DateTime.Now)
+                {
+                    _backgroundJobClient.Enqueue&lt;IEmailService&gt;(emailService =&gt; emailService.SendEmailAsync(&quot;bravometal88@gmail.com&quot;, &quot;Hello&quot;, &quot;This is my email to you!&quot;));
+
+                    user.RecentLogin = DateTime.UtcNow;
+                    await _userManager.UpdateAsync(user);
+                }
+
+                return await _refreshTokenService.GetJWTAndRefreshToken(_userManager, _configuration, command.Username, user);
+            }
+
+            throw new Exception(&quot;Incorrect details for login&quot;);
+        }
+    }
+
+    public class RefreshToken
+    {
+        public required string Token { get; set; }
+        public DateTime Created { get; set; } = DateTime.Now;
+        public DateTime Expires { get; set; }
+    }
+}
+
+    </pre>
+    <script type="text/javascript">
+      highlightRanges([[23,9,23,175,0],[24,9,24,10,0],[25,13,25,40,0],[26,13,26,44,0],[27,13,27,56,0],[28,13,28,56,0],[29,9,29,10,0],[32,9,32,10,0],[33,13,33,77,0],[34,13,34,95,0],[35,13,35,14,0],[37,17,37,104,0],[38,17,38,18,0],[39,21,39,173,0],[41,21,41,56,0],[42,21,42,58,0],[43,17,43,18,0],[45,17,45,127,0],[48,13,48,64,0],[49,9,49,10,0],[54,40,54,44,0],[54,45,54,49,0],[55,35,55,39,0],[55,40,55,44,0],[55,49,55,61,0],[56,35,56,39,0],[56,40,56,44,0]]);
+    </script>
+  </body>
+</html>

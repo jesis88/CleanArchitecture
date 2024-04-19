@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>E:\CleanArchitecture\Infrastructure\Services\EmailService.cs</title>
+    <script type="text/javascript" src="../js/dotcover.sourceview.js"></script>
+    <link rel="stylesheet" type="text/css" href="../css/dotcover.report.css" />
+  </head>
+  <body>
+    <pre id="content" class="source-code">
+using Application.Interfaces;
+using System.Net;
+using System.Net.Mail;
+
+namespace Infrastructure.Services
+{
+    public class EmailService : IEmailService
+    {
+        private readonly static string personalEmail = &quot;jesismaharjan88@gmail.com&quot;;
+        private readonly static string personalPassword = Environment.GetEnvironmentVariable(&quot;EMAIL_APP_PASSWORD&quot;)!;
+
+        //for testing mails
+        public async Task SendEmailAsync(string email, string subject, string message)
+        {
+            try
+            {
+                var smtpClient = new SmtpClient(&quot;smtp.gmail.com&quot;)
+                {
+                    Port = 587,
+                    Credentials = new NetworkCredential(personalEmail, personalPassword),
+                    EnableSsl = true,
+                };
+
+                await smtpClient.SendMailAsync(personalEmail, email, subject, message);
+            }
+            catch(Exception ex)
+            {
+                throw new InvalidOperationException($&quot;There was an error: {ex.Message}&quot;);
+            }
+            
+        }
+    }
+}
+
+    </pre>
+    <script type="text/javascript">
+      highlightRanges([[9,9,9,84,1],[10,9,10,117,1],[14,9,14,10,1],[16,13,16,14,1],[17,17,22,19,1],[24,17,24,88,1],[25,13,25,14,1],[26,13,26,32,1],[27,13,27,14,1],[28,17,28,90,1],[31,9,31,10,1]]);
+    </script>
+  </body>
+</html>

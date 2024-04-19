@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>E:\CleanArchitecture\xUnitTesting\CreateUserUT.cs</title>
+    <script type="text/javascript" src="../js/dotcover.sourceview.js"></script>
+    <link rel="stylesheet" type="text/css" href="../css/dotcover.report.css" />
+  </head>
+  <body>
+    <pre id="content" class="source-code">
+using API.Controllers;
+using Application.Behavior;
+using Application.EntityUser.Commands;
+using Application.EntityUser.Commands.CommandHandlers;
+using Application.Interfaces;
+using Domain.Entity;
+using Infrastructure.Persistence;
+using MediatR;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Moq;
+
+namespace CQRS_xUnitTesting;
+
+public class CreateUserUT
+{
+    private readonly Mock&lt;IUserManagerWrapper&gt; _userManagerMock;
+    private readonly Mock&lt;IRoleManagerWrapper&gt; _roleManagerMock;
+    private readonly Mock&lt;IMediator&gt; _mediatorMock;
+    private readonly CreateUserHandler _createUserHandler;
+    private readonly UserController _controller;
+
+    public CreateUserUT()
+    {
+        _userManagerMock = new Mock&lt;IUserManagerWrapper&gt;();
+        _roleManagerMock = new Mock&lt;IRoleManagerWrapper&gt;();
+        _mediatorMock = new Mock&lt;IMediator&gt;();
+        _controller = new UserController(_mediatorMock.Object);
+        _createUserHandler = new CreateUserHandler(_userManagerMock.Object, _roleManagerMock.Object);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldCreateUser_WhenCommandIsValid()
+    {
+        //Arrange
+        var command = new CreateUserCommand
+        {
+            UserName = &quot;TestUser&quot;,
+            Email = &quot;test@gmail.com&quot;,
+            Password = &quot;TestPassword123&quot;,
+            ConfirmPassword = &quot;TestPassword123&quot;,
+            Role = Application.EntityUser.Commands.Role.Customer
+        };
+
+        _userManagerMock.Setup(x =&gt; x.CreateAsync(It.IsAny&lt;User&gt;(), It.IsAny&lt;string&gt;()))
+            .ReturnsAsync(IdentityResult.Success);
+        _roleManagerMock.Setup(x =&gt; x.RoleExistsAsync(It.IsAny&lt;string&gt;()))
+            .ReturnsAsync(true);
+        _userManagerMock.Setup(x =&gt; x.AddToRolesAsync(It.IsAny&lt;User&gt;(), It.IsAny&lt;IEnumerable&lt;string&gt;&gt;()))
+            .ReturnsAsync(IdentityResult.Success);
+
+        //Act
+        var result = await _createUserHandler.Handle(command, CancellationToken.None);
+
+        //Assert
+        Assert.NotNull(result);
+    }
+
+    [Fact]
+    public void Handle_ShouldNotCreateUser_WhenInvalidCommand()
+    {
+        // Arrange
+        var command = new CreateUserCommand
+        {
+            UserName = &quot;&quot;, // empty username
+            Email = &quot;test@gmail.com&quot;,
+            Password = &quot;TestPassword123&quot;,
+            ConfirmPassword = &quot;TestPassword123&quot;,
+            Role = Application.EntityUser.Commands.Role.Customer
+        };
+
+        var validationResult = new UserRegisterValidator(_userManagerMock.Object).Validate(command);
+        
+        Assert.True(validationResult.Errors.Count != 0);
+    }
+
+    [Fact]
+    public async Task Controller_ShouldReturnOk_WhenValidCommand()
+    {
+        // Arrange
+        var command = new CreateUserCommand
+        {
+            UserName = &quot;TestUser&quot;,
+            Email = &quot;test@gmail.com&quot;,
+            Password = &quot;TestPassword123&quot;,
+            ConfirmPassword = &quot;TestPassword123&quot;,
+            Role = Application.EntityUser.Commands.Role.Customer
+        };
+        _mediatorMock.Setup(x =&gt; x.Send(command, It.IsAny&lt;CancellationToken&gt;()))
+            .ReturnsAsync(&quot;User created successfully&quot;);
+
+        //Act
+        var result = await _controller.GetUserRegistrationDetailsAsync(command, CancellationToken.None);
+
+        //Assert
+        var okResult = Assert.IsType&lt;OkObjectResult&gt;(result);
+        Assert.Equal(&quot;User created successfully&quot;, okResult.Value);
+        Assert.Equal(StatusCodes.Status200OK, okResult.StatusCode);
+    }
+
+    [Fact]
+    public async Task Controller_ShouldReturnInternalServerError_WhenExceptionThrown()
+    {
+        //Arrange
+        var command = new CreateUserCommand();
+        _mediatorMock.Setup(x =&gt; x.Send(command, It.IsAny&lt;CancellationToken&gt;()))
+            .ThrowsAsync(new Exception());
+
+        //Act
+        var result = await _controller.GetUserRegistrationDetailsAsync(command, CancellationToken.None);
+
+        //Assert
+        var resultStatusCode = Assert.IsType&lt;ObjectResult&gt;(result);
+        Assert.Equal(StatusCodes.Status500InternalServerError, resultStatusCode.StatusCode);
+    }
+}
+    </pre>
+    <script type="text/javascript">
+      highlightRanges([[25,5,25,26,1],[26,5,26,6,1],[27,9,27,60,1],[28,9,28,60,1],[29,9,29,47,1],[30,9,30,64,1],[31,9,31,102,1],[32,5,32,6,1],[36,5,36,6,1],[38,9,45,11,1],[47,9,48,51,1],[49,9,50,33,1],[51,9,52,51,1],[55,9,55,87,1],[58,9,58,32,1],[59,5,59,6,1],[63,5,63,6,1],[65,9,72,11,1],[74,9,74,101,1],[76,9,76,57,1],[77,5,77,6,1],[81,5,81,6,1],[83,9,90,11,1],[91,9,92,56,1],[95,9,95,105,1],[98,9,98,62,1],[99,9,99,67,1],[100,9,100,68,1],[101,5,101,6,1],[105,5,105,6,1],[107,9,107,47,1],[108,9,109,43,1],[112,9,112,105,1],[115,9,115,68,1],[116,9,116,93,1],[117,5,117,6,1]]);
+    </script>
+  </body>
+</html>

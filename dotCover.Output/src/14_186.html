@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>E:\CleanArchitecture\Application\EntityUser\Query\QueryHandler\RefreshTokenHandler.cs</title>
+    <script type="text/javascript" src="../js/dotcover.sourceview.js"></script>
+    <link rel="stylesheet" type="text/css" href="../css/dotcover.report.css" />
+  </head>
+  <body>
+    <pre id="content" class="source-code">
+using Application.EntityUser.Commands.CommandHandlers;
+using Application.Interfaces;
+using Domain.Entity;
+using MediatR;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
+
+namespace Application.EntityUser.Query.QueryHandler
+{
+    public class RefreshTokenHandler : IRequestHandler&lt;RefreshTokenQuery, string&gt;
+    {
+        private readonly IUserManagerWrapper _userManager;
+        private readonly IConfiguration _configuration;
+        private readonly IRefreshTokenService _refreshTokenService;
+
+
+        public RefreshTokenHandler(IUserManagerWrapper userManager, IConfiguration configuration, IRefreshTokenService refreshTokenService)
+        {
+            _userManager = userManager;
+            _configuration = configuration;
+            _refreshTokenService = refreshTokenService;
+        }
+
+        public async Task&lt;string&gt; Handle(RefreshTokenQuery request, CancellationToken cancellationToken)
+        {
+            var refreshTokenValue = _refreshTokenService.GetRefreshToken(request.RefreshToken);
+
+            if (refreshTokenValue == null)
+                throw new Exception(&quot;Invalid Refresh Token&quot;);
+
+            var (userName, expiryDate) = refreshTokenValue.Value;
+            if (DateTime.Now &gt; expiryDate)
+                throw new Exception(&quot;Refresh Token has expired&quot;);
+
+            var user = await _userManager.FindByNameAsync(userName);
+            if (user == null) throw new Exception(&quot;Invalid User&quot;);
+
+
+            return await _refreshTokenService.GetJWTAndRefreshToken(_userManager, _configuration, userName, user);
+        }
+
+    }
+}
+
+    </pre>
+    <script type="text/javascript">
+      highlightRanges([[23,9,23,140,0],[24,9,24,10,0],[25,13,25,40,0],[26,13,26,44,0],[27,13,27,56,0],[28,9,28,10,0],[31,9,31,10,0],[32,13,32,96,0],[34,13,34,43,0],[35,17,35,62,0],[37,13,37,66,0],[38,13,38,43,0],[39,17,39,66,0],[41,13,41,69,0],[42,13,42,30,0],[42,31,42,67,0],[45,13,45,115,0],[46,9,46,10,0]]);
+    </script>
+  </body>
+</html>

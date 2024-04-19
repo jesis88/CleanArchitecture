@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>E:\CleanArchitecture\Application\EntityUser\Query\QueryHandler\GetUserListHandler.cs</title>
+    <script type="text/javascript" src="../js/dotcover.sourceview.js"></script>
+    <link rel="stylesheet" type="text/css" href="../css/dotcover.report.css" />
+  </head>
+  <body>
+    <pre id="content" class="source-code">
+using Application.EntityUser.Query;
+using Application.Interfaces;
+using Domain.Entity;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Caching.Memory;
+using System.Text.Json;
+
+namespace Application.EntityUser.Query.QueryHandler
+{
+    public class GetUserListHandler : IRequestHandler&lt;GetUserListQuery, List&lt;User&gt;&gt;
+    {
+        private readonly IUserManagerWrapper _userManager;
+        private readonly IDistributedCache _distributedCache;
+
+        public GetUserListHandler(IUserManagerWrapper userManager, /*IMemoryCache memoryCache, */IDistributedCache distributedCache)
+        {
+            _userManager = userManager;
+            /*_memoryCache = memoryCache;*/
+            _distributedCache = distributedCache;
+        }
+
+        public async Task&lt;List&lt;User&gt;&gt; Handle(GetUserListQuery request, CancellationToken cancellationToken)
+        {
+            string key = &quot;GetUserListResult&quot;;
+            //for distributedCache
+            var userListJson = _distributedCache.GetString(key);
+
+            if (userListJson is null)
+            {
+                /*Thread.Sleep(7000);*/
+                var userList = await _userManager.ToListAsync(request, cancellationToken);
+                userListJson = JsonSerializer.Serialize(userList);
+                _distributedCache.SetString(key, userListJson, new DistributedCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(30)
+                });
+            }
+            return JsonSerializer.Deserialize&lt;List&lt;User&gt;&gt;(userListJson);
+        }
+    }
+}
+    </pre>
+    <script type="text/javascript">
+      highlightRanges([[17,9,17,133,0],[18,9,18,10,0],[19,13,19,40,0],[21,13,21,50,0],[22,9,22,10,0],[25,9,25,10,0],[26,13,26,46,0],[28,13,28,65,0],[30,13,30,38,0],[31,13,31,14,0],[33,17,33,91,0],[34,17,34,67,0],[35,17,38,20,0],[39,13,39,14,0],[40,13,40,73,0],[41,9,41,10,0]]);
+    </script>
+  </body>
+</html>

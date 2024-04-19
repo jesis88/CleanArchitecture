@@ -13,7 +13,7 @@ ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["API/API.csproj", "API/"]
 RUN dotnet restore "./API/API.csproj"
-COPY . .
+COPY appsettings.json app/
 WORKDIR "/src/API"
 RUN dotnet build "./API.csproj" -c %BUILD_CONFIGURATION% -o /app/build
 
@@ -23,5 +23,11 @@ RUN dotnet publish "./API.csproj" -c %BUILD_CONFIGURATION% -o /app/publish /p:Us
 
 FROM base AS final
 WORKDIR /app
+
+# Create a group and user
+RUN net localgroup "appgroup" /add
+RUN net user "appuser" /add /expires:never /passwordreq:no
+USER appuser
+
 COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "API.dll"]

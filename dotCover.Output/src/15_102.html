@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>E:\CleanArchitecture\xUnitTesting\GetUserUT.cs</title>
+    <script type="text/javascript" src="../js/dotcover.sourceview.js"></script>
+    <link rel="stylesheet" type="text/css" href="../css/dotcover.report.css" />
+  </head>
+  <body>
+    <pre id="content" class="source-code">
+using API.Controllers;
+using Application.Behavior;
+using Application.EntityUser.Query;
+using Application.EntityUser.Query.QueryHandler;
+using Application.Interfaces;
+using Domain.Entity;
+using Infrastructure.Persistence;
+using MediatR;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Caching.Memory;
+using Moq;
+using System.Text;
+using System.Text.Json;
+
+namespace CQRS_xUnitTesting
+{
+    public class GetUserUT
+    {
+        private readonly Mock&lt;IDistributedCache&gt; _mockDistributedCache;
+        private readonly Mock&lt;IUserManagerWrapper&gt; _mockUserManager;
+        private readonly GetUserListHandler _handler;
+        private readonly UserController _controller;
+        private readonly Mock&lt;IMediator&gt; _mediatorMock;
+
+        public GetUserUT()
+        {
+            _mediatorMock = new Mock&lt;IMediator&gt;();
+            _mockDistributedCache = new Mock&lt;IDistributedCache&gt;();
+            _mockUserManager = new Mock&lt;IUserManagerWrapper&gt;();
+
+            _handler = new GetUserListHandler(_mockUserManager.Object, _mockDistributedCache.Object);
+            _controller = new UserController(_mediatorMock.Object);
+        }
+
+        [Fact]
+        public async Task Handle_ReturnUserListFromDB_WhenCacheIsEmpty()
+        {
+            //Arrange
+            var userList = new List&lt;User&gt; { new() { Id = Guid.NewGuid().ToString() } };
+            _mockUserManager.Setup(x =&gt; x.CreateAsync(It.IsAny&lt;User&gt;(), It.IsAny&lt;string&gt;())).ReturnsAsync(IdentityResult.Success);
+            var query = new GetUserListQuery();
+
+            //Setup Mock
+            _mockDistributedCache.Setup(cache =&gt; cache.Get(It.IsAny&lt;string&gt;()));
+            _mockUserManager.Setup(x =&gt; x.ToListAsync(It.IsAny&lt;GetUserListQuery&gt;(), It.IsAny&lt;CancellationToken&gt;())).ReturnsAsync(userList);
+
+            //Act
+            var result = await _handler.Handle(query, CancellationToken.None);
+
+            //Assert
+            Assert.Single(result);
+        }
+
+        [Fact]
+        public async Task Handle_ReturnUserListFromDB_WhenCacheIsNotEmpty()
+        {
+            //Arrange
+            var userList = new List&lt;User&gt; { new () {Id = Guid.NewGuid().ToString() } };
+            var serializedUserList = JsonSerializer.Serialize(userList);
+            _mockDistributedCache.Setup(cache =&gt; cache.Get(It.IsAny&lt;string&gt;()))
+                .Returns(Encoding.UTF8.GetBytes(serializedUserList));
+            var query = new GetUserListQuery();
+
+            //Act
+            var result = await _handler.Handle(query, CancellationToken.None);
+
+            //Assert
+            Assert.Equal(userList.Count, result.Count);
+        }
+
+        [Fact]
+        public async Task Controller_ShouldReturnOk_WhenQueryIsValid()
+        {
+            // Arrange
+            var query = new GetUserListQuery();
+            var userList = new List&lt;User&gt; { new () {Id = Guid.NewGuid().ToString() }, new () { Id = Guid.NewGuid().ToString() } };
+
+            _mediatorMock.Setup(x =&gt; x.Send(It.IsAny&lt;GetUserListQuery&gt;(), It.IsAny&lt;CancellationToken&gt;()))
+                .ReturnsAsync(userList);
+
+            // Act
+            var result = await _controller.GetUserListAsync(query , CancellationToken.None);
+
+            // Assert
+            var okResult = Assert.IsType&lt;OkObjectResult&gt;(result);
+            var returnedUserList = Assert.IsType&lt;List&lt;User&gt;&gt;(okResult.Value);
+            Assert.Equal(userList.Count, returnedUserList.Count);
+        }
+
+        [Fact]
+        public async Task Controller_ShouldReturnInternalServerError_WhenExceptionIsThrown()
+        {
+            // Arrange
+            _mediatorMock.Setup(x =&gt; x.Send(It.IsAny&lt;GetUserListQuery&gt;(), It.IsAny&lt;CancellationToken&gt;()))
+                .ThrowsAsync(new Exception(&quot;Test exception&quot;));
+
+            // Act
+            var result = await _controller.GetUserListAsync(new GetUserListQuery(), CancellationToken.None);
+
+            // Assert
+            var statusCodeResult = Assert.IsType&lt;ObjectResult&gt;(result);
+            Assert.Equal(500, statusCodeResult.StatusCode);
+        }
+
+    }
+}
+
+    </pre>
+    <script type="text/javascript">
+      highlightRanges([[28,9,28,27,1],[29,9,29,10,1],[30,13,30,51,1],[31,13,31,67,1],[32,13,32,64,1],[34,13,34,102,1],[35,13,35,68,1],[36,9,36,10,1],[40,9,40,10,1],[42,13,42,88,1],[43,13,43,131,1],[44,13,44,48,1],[47,13,47,81,1],[48,13,48,140,1],[51,13,51,79,1],[54,13,54,35,1],[55,9,55,10,1],[59,9,59,10,1],[61,13,61,88,1],[62,13,62,73,1],[63,13,64,70,1],[65,13,65,48,1],[68,13,68,79,1],[71,13,71,56,1],[72,9,72,10,1],[76,9,76,10,1],[78,13,78,48,1],[79,13,79,131,1],[81,13,82,41,1],[85,13,85,93,1],[88,13,88,66,1],[89,13,89,78,1],[90,13,90,66,1],[91,9,91,10,1],[95,9,95,10,1],[97,13,98,63,1],[101,13,101,109,1],[104,13,104,72,1],[105,13,105,60,1],[106,9,106,10,1]]);
+    </script>
+  </body>
+</html>

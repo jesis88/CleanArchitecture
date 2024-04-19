@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>E:\CleanArchitecture\Domain\Entity\Order.cs</title>
+    <script type="text/javascript" src="../js/dotcover.sourceview.js"></script>
+    <link rel="stylesheet" type="text/css" href="../css/dotcover.report.css" />
+  </head>
+  <body>
+    <pre id="content" class="source-code">
+using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
+
+namespace Domain.Entity
+{
+    public class Order
+    {
+        public int OrderId { get; set; } 
+
+        [StringLength(80, MinimumLength = 4)]
+        public string? ProductName { get; set; }
+
+        public int? Quantity { get; set; }
+
+        [ForeignKey(&quot;Customer&quot;)]
+        public int CustomerId { get; set; }
+
+        [ExcludeFromCodeCoverage]
+        // Navigation property
+        public Customer? Customer { get; set; }
+    }
+}
+    </pre>
+    <script type="text/javascript">
+      highlightRanges([[9,30,9,34,0],[9,35,9,39,0],[12,38,12,42,0],[12,43,12,47,0],[14,32,14,36,0],[14,37,14,41,0],[17,33,17,37,0],[17,38,17,42,0],[21,37,21,41,0],[21,42,21,46,0]]);
+    </script>
+  </body>
+</html>
